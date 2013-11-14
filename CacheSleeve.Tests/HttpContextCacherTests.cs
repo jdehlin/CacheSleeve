@@ -102,24 +102,30 @@ namespace CacheSleeve.Tests
             }
         }
 
-        //public class Expiration : HttpContextCacherTests
-        //{
-        //    [Fact]
-        //    public void SetsTimeToLiveByDateTime()
-        //    {
-        //        _httpContextCacher.Set("key", "value", DateTime.Now.AddMinutes(1));
-        //        var result = _httpContextCacher.TimeToLive("key");
-        //        Assert.InRange(result, 50, 70);
-        //    }
+        public class Expiration : HttpContextCacherTests
+        {
+            [Fact]
+            public void SetsTimeToLiveByDateTime()
+            {
+                _httpContextCacher.Set("key", "value", DateTime.Now.AddMilliseconds(100));
+                var result = _httpContextCacher.Get<string>("key");
+                Assert.Equal("value", result);
+                Thread.Sleep(110);
+                result = _httpContextCacher.Get<string>("key");
+                Assert.Equal(null, result);
+            }
 
-        //    [Fact]
-        //    public void SetsTimeToLiveByTimeSpan()
-        //    {
-        //        _httpContextCacher.Set("key", "value", new TimeSpan(0, 1, 0));
-        //        var result = _httpContextCacher.TimeToLive("key");
-        //        Assert.InRange(result, 50, 70);
-        //    }
-        //}
+            [Fact]
+            public void SetsTimeToLiveByTimeSpan()
+            {
+                _httpContextCacher.Set("key", "value", new TimeSpan(0, 0, 0, 0, 100));
+                var result = _httpContextCacher.Get<string>("key");
+                Assert.Equal("value", result);
+                Thread.Sleep(110);
+                result = _httpContextCacher.Get<string>("key");
+                Assert.Equal(null, result);
+            }
+        }
 
         public class BulkOperations : HttpContextCacherTests
         {
