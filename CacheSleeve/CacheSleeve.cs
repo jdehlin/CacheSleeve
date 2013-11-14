@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 using BookSleeve;
+using CacheSleeve.Utilities;
 
 namespace CacheSleeve
 {
@@ -36,7 +37,7 @@ namespace CacheSleeve
         public static void Init(string redisHost, int redisPort = 6379, string redisPassword = null, string keyPrefix = "cs.")
         {
             if (Manager._setup)
-                throw new InvalidOperationException("Cannot reinitialize CacheSleeve");
+                if (!UnitTestDetector.IsRunningFromXunit) throw new InvalidOperationException("Cannot reinitialize CacheSleeve");
             Manager._setup = true;
 
             Manager.RedisHost = redisHost;

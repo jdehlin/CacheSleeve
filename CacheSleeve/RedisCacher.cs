@@ -24,15 +24,15 @@ namespace CacheSleeve
             {
                 conn.Wait(conn.Open());
                 if (typeof(T) == typeof(byte[]))
-                    return (T)(object)conn.Strings.Get(Db, _cacheSleeve.AddPrefix(key));
+                    return (T)(object)conn.Strings.Get(Db, _cacheSleeve.AddPrefix(key)).Result;
                 string result;
                 try
                 {
                     result = conn.Strings.GetString(Db, _cacheSleeve.AddPrefix(key)).Result;
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    return (T)(object)null;
+                    return default(T);
                 }
                 if (result == null || typeof(T) == typeof(string))
                     return (T)(object)result;
@@ -40,25 +40,26 @@ namespace CacheSleeve
                 {
                     return JsonConvert.DeserializeObject<T>(result);
                 }
-                catch (InvalidCastException)
+                catch (JsonReaderException)
                 {
                     Remove(key);
-                    return (T)(object)null;
+                    return default(T);
                 }
             }
         }
 
-        public IDictionary<string, T> GetAll<T>(IEnumerable<string> keys)
+        public IDictionary<string, T> GetAll<T>(IEnumerable<string> keys = null)
         {
             if (keys == null)
                 using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
                 {
                     conn.Open();
                     keys = conn.Keys.Find(Db, _cacheSleeve.AddPrefix("*")).Result;
+                    keys = keys.Select(k => _cacheSleeve.StripPrefix(k));
                 }
             
             byte[][] keyValues;
-            var keysArray = keys.ToArray();
+            var keysArray = keys.Select(k => _cacheSleeve.AddPrefix(k)).ToArray();
             var results = new Dictionary<string, T>();
 
             using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
@@ -70,14 +71,16 @@ namespace CacheSleeve
             var i = 0;
             foreach (var keyValue in keyValues)
             {
-                var key = _cacheSleeve.AddPrefix(keysArray[i++]);
+                var key = _cacheSleeve.StripPrefix(keysArray[i++]);
                 if (keyValue == null)
                     results[key] = default(T);
                 else if (typeof(T) == typeof(byte[]))
                     results[key] = (T)(object)keyValue;
                 else
                 {
-                    var keyValueString = Encoding.UTF8.GetString(keyValue);
+                    var keyValueString = GetString(keyValue);
+                    if (typeof (T) == typeof (string))
+                        results[key] = (T)(object)keyValueString;
                     try
                     {
                         results[key] = JsonConvert.DeserializeObject<T>(keyValueString);
@@ -106,7 +109,7 @@ namespace CacheSleeve
                         conn.Strings.Set(Db, _cacheSleeve.AddPrefix(key), valueString);                        
                     }
                 }
-                catch (InvalidOperationException)
+                catch (Exception)
                 {
                     return false;
                 }
@@ -121,7 +124,8 @@ namespace CacheSleeve
                 using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
                 {
                     conn.Open();
-                    result = conn.Keys.Expire(Db, key, (int)(expiresAt - DateTime.UtcNow).TotalSeconds).Result;
+                    var seconds = (int) (expiresAt - DateTime.Now).TotalSeconds;
+                    result = conn.Keys.Expire(Db, _cacheSleeve.AddPrefix(key), seconds).Result;
                 }
             return result;
         }
@@ -133,7 +137,7 @@ namespace CacheSleeve
                 using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
                 {
                     conn.Open();
-                    result = conn.Keys.Expire(Db, key, (int)expiresIn.TotalSeconds).Result;
+                    result = conn.Keys.Expire(Db, _cacheSleeve.AddPrefix(key), (int)expiresIn.TotalSeconds).Result;
                 }
             return result;
         }
@@ -149,7 +153,7 @@ namespace CacheSleeve
                     valBytes.Add(_cacheSleeve.AddPrefix(item.Key), json != null ? GetBytes(json) : new byte[] {});
                 }
                 else
-                    valBytes.Add(item.Key, (byte[])(object)item.Value ?? new byte[] { });
+                    valBytes.Add(_cacheSleeve.AddPrefix(item.Key), (byte[])(object)item.Value ?? new byte[] { });
             }
             using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
             {
@@ -174,11 +178,29 @@ namespace CacheSleeve
                 conn.Open();
                 var keys = conn.Keys.Find(Db, _cacheSleeve.AddPrefix("*")).Result;
                 foreach (var key in keys)
-                    Remove(key);
+                    Remove(_cacheSleeve.StripPrefix(key));
             }
         }
 
+        /// <summary>
+        /// Gets the amount of time left before the item expires.
+        /// </summary>
+        /// <param name="key">The key to check.</param>
+        /// <returns>The amount of time in seconds.</returns>
+        public long TimeToLive(string key)
+        {
+            using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
+            {
+                conn.Open();
+                return conn.Keys.TimeToLive(Db, _cacheSleeve.AddPrefix(key)).Result;
+            }
+        }
 
+        /// <summary>
+        /// Converts a string to a byte[].
+        /// </summary>
+        /// <param name="str">The string to convert.</param>
+        /// <returns>The resulting byte[].</returns>
         private static byte[] GetBytes(string str)
         {
             var bytes = new byte[str.Length * sizeof(char)];

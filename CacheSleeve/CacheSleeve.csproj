@@ -53,6 +53,7 @@
     <Compile Include="ICacher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RedisCacher.cs" />
+    <Compile Include="Utilities\UnitTestDetector.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

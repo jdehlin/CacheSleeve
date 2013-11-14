@@ -20,12 +20,15 @@ namespace CacheSleeve
         public T Get<T>(string key)
         {
             var cacheEntry = (CacheEntry)_cache.Get(_cacheSleeve.AddPrefix(key));
-            if (cacheEntry == null)
-                return (T)(object)null;
+            if (cacheEntry == null || cacheEntry.Value.GetType() != typeof (T))
+            {
+                Remove(key);
+                return default(T);   
+            }
             return (T)cacheEntry.Value;
         }
 
-        public IDictionary<string, T> GetAll<T>(IEnumerable<string> keys)
+        public IDictionary<string, T> GetAll<T>(IEnumerable<string> keys = null)
         {
             var items = new Dictionary<string, T>();
             if (keys != null)
@@ -84,7 +87,7 @@ namespace CacheSleeve
         {
             var enumerator = _cache.GetEnumerator();
             while (enumerator.MoveNext())
-                _cache.Remove(_cacheSleeve.AddPrefix(enumerator.Key.ToString()));
+                _cache.Remove(enumerator.Key.ToString());
         }
 
         /// <summary>
