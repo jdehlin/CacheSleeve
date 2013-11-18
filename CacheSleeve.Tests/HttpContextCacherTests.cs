@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Web;
@@ -179,6 +180,21 @@ namespace CacheSleeve.Tests
                 var result = _httpContextCacher.GetAll<string>();
                 Assert.Equal("value1", result["key1"]);
                 Assert.Equal("value2", result["key2"]);
+            }
+        }
+
+        public class Dependencies : HttpContextCacherTests
+        {
+            [Fact]
+            public void DeleteParentAlsoDeletesChildren()
+            {
+                _httpContextCacher.Set("parent", "value1");
+                _httpContextCacher.Set("child", "value2", "parent");
+                var result = _httpContextCacher.Get<string>("child");
+                Assert.Equal("value2", result);
+                _httpContextCacher.Remove("parent");
+                result = _httpContextCacher.Get<string>("child");
+                Assert.Equal(null, result);
             }
         }
 

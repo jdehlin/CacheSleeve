@@ -42,11 +42,11 @@ namespace CacheSleeve
             return results;
         }
 
-        public bool Set<T>(string key, T value)
+        public bool Set<T>(string key, T value, string parentKey = null)
         {
             try
             {
-                _remoteCacher.Set(key, value);
+                _remoteCacher.Set(key, value, parentKey);
                 _remoteCacher.PublishToKey("cacheSleeve.remove." + key, key);
                 return true;
             }
@@ -58,11 +58,11 @@ namespace CacheSleeve
             }
         }
 
-        public bool Set<T>(string key, T value, DateTime expiresAt)
+        public bool Set<T>(string key, T value, DateTime expiresAt, string parentKey = null)
         {
             try
             {
-                _remoteCacher.Set(key, value, expiresAt);
+                _remoteCacher.Set(key, value, expiresAt, parentKey);
                 _remoteCacher.PublishToKey("cacheSleeve.remove." + key, key);
                 return true;
             }
@@ -74,11 +74,11 @@ namespace CacheSleeve
             }
         }
 
-        public bool Set<T>(string key, T value, TimeSpan expiresIn)
+        public bool Set<T>(string key, T value, TimeSpan expiresIn, string parentKey = null)
         {
             try
             {
-                _remoteCacher.Set(key, value, expiresIn);
+                _remoteCacher.Set(key, value, expiresIn, parentKey);
                 _remoteCacher.PublishToKey("cacheSleeve.remove." + key, key);
                 return true;
             }

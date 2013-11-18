@@ -101,54 +101,41 @@ namespace CacheSleeve
             return results;
         }
 
-        public bool Set<T>(string key, T value)
+        public bool Set<T>(string key, T value, string parentKey = null)
         {
-            using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
-            {
-                conn.Open();
-                var bytesValue = value as byte[];
-                try
-                {
-                    if (bytesValue != null)
-                        conn.Strings.Set(Db, _cacheSleeve.AddPrefix(key), bytesValue);
-                    else if (typeof(T) == typeof(string))
-                        conn.Strings.Set(Db, _cacheSleeve.AddPrefix(key), value as string);
-                    else
-                    {
-                        var valueString = JsonConvert.SerializeObject(value);
-                        conn.Strings.Set(Db, _cacheSleeve.AddPrefix(key), valueString);                        
-                    }
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-                return true;
-            }
+            if (InternalSet(key, value, parentKey))
+                SetDependencies(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
+            return true;
         }
 
-        public bool Set<T>(string key, T value, DateTime expiresAt)
+        public bool Set<T>(string key, T value, DateTime expiresAt, string parentKey = null)
         {
             var result = false;
-            if (Set(key, value))
+            if (InternalSet(key, value))
+            {
                 using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
                 {
                     conn.Open();
                     var seconds = (int) (expiresAt - DateTime.Now).TotalSeconds;
                     result = conn.Keys.Expire(Db, _cacheSleeve.AddPrefix(key), seconds).Result;
                 }
+                SetDependencies(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
+            }
             return result;
         }
 
-        public bool Set<T>(string key, T value, TimeSpan expiresIn)
+        public bool Set<T>(string key, T value, TimeSpan expiresIn, string parentKey = null)
         {
             var result = false;
-            if (Set(key, value))
+            if (InternalSet(key, value))
+            {
                 using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
                 {
                     conn.Open();
-                    result = conn.Keys.Expire(Db, _cacheSleeve.AddPrefix(key), (int)expiresIn.TotalSeconds).Result;
+                    result = conn.Keys.Expire(Db, _cacheSleeve.AddPrefix(key), (int) expiresIn.TotalSeconds).Result;
                 }
+                SetDependencies(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
+            }
             return result;
         }
 
@@ -228,28 +215,58 @@ namespace CacheSleeve
             }
         }
 
-        /// <summary>
-        /// Converts a string to a byte[].
-        /// </summary>
-        /// <param name="str">The string to convert.</param>
-        /// <returns>The resulting byte[].</returns>
-        private static byte[] GetBytes(string str)
+        private bool InternalSet<T>(string key, T value, string parentKey = null)
         {
-            var bytes = new byte[str.Length * sizeof(char)];
-            Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
-            return bytes;
+            using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
+            {
+                conn.Open();
+                var bytesValue = value as byte[];
+                try
+                {
+                    if (bytesValue != null)
+                        conn.Strings.Set(Db, _cacheSleeve.AddPrefix(key), bytesValue);
+                    else if (typeof(T) == typeof(string))
+                        conn.Strings.Set(Db, _cacheSleeve.AddPrefix(key), value as string);
+                    else
+                    {
+                        var valueString = JsonConvert.SerializeObject(value);
+                        conn.Strings.Set(Db, _cacheSleeve.AddPrefix(key), valueString);                        
+                    }
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+                return true;
+            }
         }
 
-        /// <summary>
-        /// Converts a byte[] to a string.
-        /// </summary>
-        /// <param name="bytes">The bytes to convert.</param>
-        /// <returns>The resulting string.</returns>
-        private static string GetString(byte[] bytes)
+        private void SetDependencies(string childKey, string parentKey)
         {
-            var chars = new char[bytes.Length / sizeof(char)];
-            Buffer.BlockCopy(bytes, 0, chars, 0, bytes.Length);
-            return new string(chars);
+            if (string.IsNullOrWhiteSpace(_cacheSleeve.StripPrefix(childKey)) || string.IsNullOrWhiteSpace(_cacheSleeve.StripPrefix(parentKey)))
+                return;
+
+            using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
+            {
+                var children = Get<List<string>>(parentKey + ".children");
+                if (children == null)
+                    conn.Strings.Set(Db, parentKey + ".children", JsonConvert.SerializeObject(new List<string> { childKey }));
+                else
+                {
+                    children.Add(childKey);
+                    conn.Strings.Set(Db, parentKey + ".children", JsonConvert.SerializeObject(children));
+                }
+                conn.Strings.Set(Db, childKey + ".parent", parentKey);
+
+                // make sure the dependency mappings expire when the parent does
+                var ttl = (int)conn.Keys.TimeToLive(Db, parentKey).Result;
+                if (ttl > -1)
+                {
+                    conn.Keys.Expire(Db, parentKey + ".dependencies", ttl);
+                    conn.Keys.Expire(Db, childKey + ".parent", ttl);
+                    conn.Keys.Expire(Db, childKey, ttl);
+                }
+            }
         }
     }
 }

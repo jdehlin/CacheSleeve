@@ -44,22 +44,22 @@ namespace CacheSleeve
             return items;
         }
 
-        public bool Set<T>(string key, T value)
+        public bool Set<T>(string key, T value, string parentKey = null)
         {
             var entry = new CacheEntry(value, null);
-            return Set(key, entry);
+            return InternalSet(key, entry, parentKey);
         }
 
-        public bool Set<T>(string key, T value, DateTime expiresAt)
+        public bool Set<T>(string key, T value, DateTime expiresAt, string parentKey = null)
         {
             var entry = new CacheEntry(value, expiresAt);
-            return Set(key, entry);
+            return InternalSet(key, entry, parentKey);
         }
 
-        public bool Set<T>(string key, T value, TimeSpan expiresIn)
+        public bool Set<T>(string key, T value, TimeSpan expiresIn, string parentKey = null)
         {
             var entry = new CacheEntry(value, DateTime.UtcNow.Add(expiresIn));
-            return Set(key, entry);
+            return InternalSet(key, entry, parentKey);
         }
 
         public void SetAll<T>(Dictionary<string, T> values)
@@ -95,14 +95,18 @@ namespace CacheSleeve
         /// </summary>
         /// <param name="key">The key of the item to insert.</param>
         /// <param name="entry">The internal CacheEntry object to insert.</param>
-        private bool Set(string key, CacheEntry entry)
+        /// <param name="parentKey">The key of the item that this item is a child of.</param>
+        private bool InternalSet(string key, CacheEntry entry, string parentKey = null)
         {
+            CacheDependency cacheDependency = null;
+            if (!string.IsNullOrWhiteSpace(parentKey))
+                cacheDependency = new CacheDependency(null, new[] { _cacheSleeve.AddPrefix(parentKey) });
             try
             {
                 if (entry.ExpiresAt == null)
-                    _cache.Insert(_cacheSleeve.AddPrefix(key), entry);
+                    _cache.Insert(_cacheSleeve.AddPrefix(key), entry, cacheDependency);
                 else
-                    _cache.Insert(_cacheSleeve.AddPrefix(key), entry, null, entry.ExpiresAt.Value, Cache.NoSlidingExpiration);
+                    _cache.Insert(_cacheSleeve.AddPrefix(key), entry, cacheDependency, entry.ExpiresAt.Value, Cache.NoSlidingExpiration);
                 return true;
             }
             catch (Exception)
