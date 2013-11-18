@@ -26,7 +26,7 @@ namespace CacheSleeve
         /// <returns>
         /// A dictionary of key and values.
         /// </returns>
-        IDictionary<string, T> GetAll<T>(IEnumerable<string> keys = null);
+        Dictionary<string, T> GetAll<T>(IEnumerable<string> keys = null);
 
         /// <summary>
         /// Insert an item into the cache.
@@ -75,7 +75,7 @@ namespace CacheSleeve
         /// </summary>
         /// <typeparam name="T">The type of the items to be inserted</typeparam>
         /// <param name="values">A dictionary of the keys and values to be inserted.</param>
-        void SetAll<T>(IDictionary<string, T> values);
+        void SetAll<T>(Dictionary<string, T> values);
 
         /// <summary>
         /// Deletes the specified item from the cache.

@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Web;
 using CacheSleeve.Tests.TestObjects;
@@ -17,12 +14,12 @@ namespace CacheSleeve.Tests
 
         public HttpContextCacherTests()
         {
-            CacheSleeve.Init(TestSettings.RedisHost, TestSettings.RedisPort, TestSettings.RedisPassword, TestSettings.KeyPrefix);
-
             // have to fake an http context to use http context cache
             HttpContext.Current = new HttpContext(new HttpRequest(null, "http://tempuri.org", null), new HttpResponse(null));
 
-            _httpContextCacher = new HttpContextCacher();
+            CacheSleeve.Init(TestSettings.RedisHost, TestSettings.RedisPort, TestSettings.RedisPassword, TestSettings.KeyPrefix);
+
+            _httpContextCacher = CacheSleeve.Manager.LocalCacher;
         }
 
         public class Basics : HttpContextCacherTests

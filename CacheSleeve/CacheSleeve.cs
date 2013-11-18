@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Linq;
 using BookSleeve;
 using CacheSleeve.Utilities;
 
@@ -44,27 +46,46 @@ namespace CacheSleeve
             Manager.RedisPort = redisPort;
             Manager.RedisPassword = redisPassword;
             Manager.KeyPrefix = keyPrefix;
+
+            Manager.RemoteCacher = new RedisCacher();
+            Manager.LocalCacher = new HttpContextCacher();
+
+            // Setup pub/sub for cache syncing
+            var connection = new RedisConnection(redisHost, redisPort, -1, redisPassword);
+            var channel = connection.GetOpenSubscriberChannel();
+            channel.PatternSubscribe("cacheSleeve.remove.*", (key, message) => Manager.LocalCacher.Remove(GetString(message)));
+            channel.PatternSubscribe("cacheSleeve.flush*", (key, message) => Manager.LocalCacher.FlushAll());
         }
+
+        /// <summary>
+        /// The out of band caching service used as a backplane to share cache across servers.
+        /// </summary>
+        public RedisCacher RemoteCacher { get; private set; }
+
+        /// <summary>
+        /// The local in-memory cache.
+        /// </summary>
+        public HttpContextCacher LocalCacher { get; private set; }
 
         /// <summary>
         /// The prefix added to keys of items cached by CacheSleeve to prevent collisions.
         /// </summary>
-        public string KeyPrefix { get; set; }
+        public string KeyPrefix { get; private set; }
         
         /// <summary>
         /// The url to the Redis backplane.
         /// </summary>
-        public string RedisHost { get; set; }
+        public string RedisHost { get; private set; }
 
         /// <summary>
         /// The port for the Redis backplane.
         /// </summary>
-        public int RedisPort { get; set; }
+        public int RedisPort { get; private set; }
 
         /// <summary>
         /// The password for the Redis backplane.
         /// </summary>
-        public string RedisPassword { get; set; }
+        public string RedisPassword { get; private set; }
 
         /// <summary>
         /// Adds the prefix to the key.
@@ -85,6 +106,17 @@ namespace CacheSleeve
         {
             var regex = new Regex(string.Format("^{0}", KeyPrefix));
             return regex.Replace(key, String.Empty);
+        }
+
+        /// <summary>
+        /// Converts a byte[] to a string.
+        /// </summary>
+        /// <param name="bytes">The bytes to convert.</param>
+        /// <returns>The resulting string.</returns>
+        private static string GetString(byte[] bytes)
+        {
+            var buffer = Encoding.Convert(Encoding.GetEncoding("iso-8859-1"), Encoding.UTF8, bytes);
+            return Encoding.UTF8.GetString(buffer, 0, bytes.Count());
         }
     }
 }

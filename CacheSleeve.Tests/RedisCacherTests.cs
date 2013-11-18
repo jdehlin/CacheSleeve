@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Web;
 using CacheSleeve.Tests.TestObjects;
 using Xunit;
 
@@ -13,9 +14,12 @@ namespace CacheSleeve.Tests
 
         public RedisCacherTests()
         {
+            // have to fake an http context to use http context cache
+            HttpContext.Current = new HttpContext(new HttpRequest(null, "http://tempuri.org", null), new HttpResponse(null));
+
             CacheSleeve.Init(TestSettings.RedisHost, TestSettings.RedisPort, TestSettings.RedisPassword, TestSettings.KeyPrefix);
 
-            _redisCacher = new RedisCacher();
+            _redisCacher = CacheSleeve.Manager.RemoteCacher;
         }
 
         public class Basics : RedisCacherTests

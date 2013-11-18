@@ -28,7 +28,7 @@ namespace CacheSleeve
             return (T)cacheEntry.Value;
         }
 
-        public IDictionary<string, T> GetAll<T>(IEnumerable<string> keys = null)
+        public Dictionary<string, T> GetAll<T>(IEnumerable<string> keys = null)
         {
             var items = new Dictionary<string, T>();
             if (keys != null)
@@ -62,7 +62,7 @@ namespace CacheSleeve
             return Set(key, entry);
         }
 
-        public void SetAll<T>(IDictionary<string, T> values)
+        public void SetAll<T>(Dictionary<string, T> values)
         {
             foreach (var entry in values)
                 Set(entry.Key, entry.Value);

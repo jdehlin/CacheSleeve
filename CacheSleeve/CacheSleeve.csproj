@@ -32,7 +32,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BookSleeve">
+    <Reference Include="BookSleeve, Version=1.3.38.0, Culture=neutral, PublicKeyToken=9056fda458ff61cf, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\BookSleeve.1.3.39\lib\BookSleeve.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -50,6 +51,7 @@
   <ItemGroup>
     <Compile Include="CacheSleeve.cs" />
     <Compile Include="HttpContextCacher.cs" />
+    <Compile Include="HybridCacher.cs" />
     <Compile Include="ICacher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RedisCacher.cs" />
