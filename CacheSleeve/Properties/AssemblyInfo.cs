@@ -9,7 +9,7 @@ using System.Resources;
 [assembly: AssemblyTitle("CacheSleeve")]
 [assembly: AssemblyDescription("CacheSleeve lets you easily set up distributed in-memory cache with a Redis backplane for .NET projects.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Jack Dehlin")]
 [assembly: AssemblyProduct("CacheSleeve")]
 [assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
@@ -33,6 +33,6 @@ using System.Resources;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.0.1.0")]
-[assembly: AssemblyFileVersion("0.0.1.0")]
+[assembly: AssemblyVersion("0.1.0")]
+[assembly: AssemblyFileVersion("0.1.0")]
 [assembly: NeutralResourcesLanguageAttribute("en-US")]
