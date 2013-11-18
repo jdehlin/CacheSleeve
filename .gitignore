@@ -45,6 +45,7 @@ build/
 *.pidb
 *.log
 *.scc
+*.nupkg
 
 # Visual C++ cache files
 ipch/
@@ -149,3 +150,5 @@ $RECYCLE.BIN/
 
 # Mac crap
 .DS_Store
+
+
