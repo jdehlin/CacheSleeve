@@ -28,9 +28,9 @@ namespace CacheSleeve.Tests
             // have to fake an http context to use http context cache
             HttpContext.Current = new HttpContext(new HttpRequest(null, "http://tempuri.org", null), new HttpResponse(null));
 
-            CacheSleeve.Init(TestSettings.RedisHost, TestSettings.RedisPort, TestSettings.RedisPassword, TestSettings.KeyPrefix);
+            Manager.Init(TestSettings.RedisHost, TestSettings.RedisPort, TestSettings.RedisPassword, TestSettings.KeyPrefix);
 
-            var cacheSleeve = CacheSleeve.Manager;
+            var cacheSleeve = Manager.Settings;
 
             var conn = new RedisConnection(cacheSleeve.RedisHost, cacheSleeve.RedisPort, -1, cacheSleeve.RedisPassword);
             var channel = conn.GetOpenSubscriberChannel();

@@ -17,9 +17,9 @@ namespace CacheSleeve.Tests
             // have to fake an http context to use http context cache
             HttpContext.Current = new HttpContext(new HttpRequest(null, "http://tempuri.org", null), new HttpResponse(null));
 
-            CacheSleeve.Init(TestSettings.RedisHost, TestSettings.RedisPort, TestSettings.RedisPassword, TestSettings.KeyPrefix);
+            Manager.Init(TestSettings.RedisHost, TestSettings.RedisPort, TestSettings.RedisPassword, TestSettings.KeyPrefix);
 
-            _httpContextCacher = CacheSleeve.Manager.LocalCacher;
+            _httpContextCacher = Manager.Settings.LocalCacher;
         }
 
         public class Basics : HttpContextCacherTests

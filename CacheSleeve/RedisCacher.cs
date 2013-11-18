@@ -10,11 +10,11 @@ namespace CacheSleeve
     public class RedisCacher : ICacher
     {
         private const int Db = 0;
-        private readonly CacheSleeve _cacheSleeve;
+        private readonly Manager _cacheSleeve;
 
         public RedisCacher()
         {
-            _cacheSleeve = CacheSleeve.Manager;
+            _cacheSleeve = Manager.Settings;
         }
 
 

@@ -7,21 +7,21 @@ using CacheSleeve.Utilities;
 
 namespace CacheSleeve
 {
-    public sealed class CacheSleeve
+    public sealed class Manager
     {
         private bool _setup;
         
         #region Singleton Setup
 
-		private CacheSleeve()
+		private Manager()
 		{
 		}
 
-		public static CacheSleeve Manager
+		public static Manager Settings
 		{
 			get
 			{
-				return Nested.Manager;
+				return Nested.Settings;
 			}
 		}
 
@@ -31,30 +31,30 @@ namespace CacheSleeve
 			{
 			}
 
-			internal static readonly CacheSleeve Manager = new CacheSleeve();
+			internal static readonly Manager Settings = new Manager();
 		}
 
 		#endregion
 
         public static void Init(string redisHost, int redisPort = 6379, string redisPassword = null, string keyPrefix = "cs.")
         {
-            if (Manager._setup)
+            if (Settings._setup)
                 if (!UnitTestDetector.IsRunningFromXunit) throw new InvalidOperationException("Cannot reinitialize CacheSleeve");
-            Manager._setup = true;
+            Settings._setup = true;
 
-            Manager.RedisHost = redisHost;
-            Manager.RedisPort = redisPort;
-            Manager.RedisPassword = redisPassword;
-            Manager.KeyPrefix = keyPrefix;
+            Settings.RedisHost = redisHost;
+            Settings.RedisPort = redisPort;
+            Settings.RedisPassword = redisPassword;
+            Settings.KeyPrefix = keyPrefix;
 
-            Manager.RemoteCacher = new RedisCacher();
-            Manager.LocalCacher = new HttpContextCacher();
+            Settings.RemoteCacher = new RedisCacher();
+            Settings.LocalCacher = new HttpContextCacher();
 
             // Setup pub/sub for cache syncing
             var connection = new RedisConnection(redisHost, redisPort, -1, redisPassword);
             var channel = connection.GetOpenSubscriberChannel();
-            channel.PatternSubscribe("cacheSleeve.remove.*", (key, message) => Manager.LocalCacher.Remove(GetString(message)));
-            channel.PatternSubscribe("cacheSleeve.flush*", (key, message) => Manager.LocalCacher.FlushAll());
+            channel.PatternSubscribe("cacheSleeve.remove.*", (key, message) => Settings.LocalCacher.Remove(GetString(message)));
+            channel.PatternSubscribe("cacheSleeve.flush*", (key, message) => Settings.LocalCacher.FlushAll());
         }
 
         /// <summary>

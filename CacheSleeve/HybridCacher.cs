@@ -11,7 +11,7 @@ namespace CacheSleeve
 
         public HybridCacher()
         {
-            var cacheSleeve = CacheSleeve.Manager;
+            var cacheSleeve = Manager.Settings;
 
             _remoteCacher = cacheSleeve.RemoteCacher;
             _localCacher = cacheSleeve.LocalCacher;

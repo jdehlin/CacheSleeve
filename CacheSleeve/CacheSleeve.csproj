@@ -49,7 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CacheSleeve.cs" />
+    <Compile Include="Manager.cs" />
     <Compile Include="HttpContextCacher.cs" />
     <Compile Include="HybridCacher.cs" />
     <Compile Include="ICacher.cs" />
