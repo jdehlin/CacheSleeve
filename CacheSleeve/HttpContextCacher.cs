@@ -6,12 +6,12 @@ namespace CacheSleeve
     public class HttpContextCacher : ICacher
     {
         private readonly Cache _cache;
-        private readonly Manager _cacheSleeve;
+        private readonly CacheManager _cacheSleeve;
 
         public HttpContextCacher()
         {
             _cache = System.Web.HttpContext.Current.Cache;
-            _cacheSleeve = Manager.Settings;
+            _cacheSleeve = CacheManager.Settings;
         }
 
 

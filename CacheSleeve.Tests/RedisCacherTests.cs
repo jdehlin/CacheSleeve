@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using System.Web;
 using BookSleeve;
@@ -18,9 +16,9 @@ namespace CacheSleeve.Tests
             // have to fake an http context to use http context cache
             HttpContext.Current = new HttpContext(new HttpRequest(null, "http://tempuri.org", null), new HttpResponse(null));
 
-            Manager.Init(TestSettings.RedisHost, TestSettings.RedisPort, TestSettings.RedisPassword, TestSettings.KeyPrefix);
+            CacheManager.Init(TestSettings.RedisHost, TestSettings.RedisPort, TestSettings.RedisPassword, TestSettings.KeyPrefix);
 
-            _redisCacher = Manager.Settings.RemoteCacher;
+            _redisCacher = CacheManager.Settings.RemoteCacher;
         }
 
         public class Basics : RedisCacherTests
@@ -129,7 +127,7 @@ namespace CacheSleeve.Tests
                 using (var conn = new RedisConnection(TestSettings.RedisHost, TestSettings.RedisPort, -1, TestSettings.RedisPassword))
                 {
                     conn.Open();
-                    var childrenKey = Manager.Settings.AddPrefix("key1.children");
+                    var childrenKey = CacheManager.Settings.AddPrefix("key1.children");
                     var result = conn.Lists.RangeString(0, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
                     Assert.Contains(TestSettings.KeyPrefix + "key2", result);
                 }
@@ -141,7 +139,7 @@ namespace CacheSleeve.Tests
                 _redisCacher.Set("key1", "value1");
                 _redisCacher.Set("key2", "value2", "key1");
                 var result = _redisCacher.Get<string>("key2.parent");
-                Assert.Equal(Manager.Settings.AddPrefix("key1"), result);
+                Assert.Equal(CacheManager.Settings.AddPrefix("key1"), result);
             }
 
             [Fact]
@@ -182,7 +180,7 @@ namespace CacheSleeve.Tests
                 using (var conn = new RedisConnection(TestSettings.RedisHost, TestSettings.RedisPort, -1, TestSettings.RedisPassword))
                 {
                     conn.Open();
-                    var childrenKey = Manager.Settings.AddPrefix("key1.children");
+                    var childrenKey = CacheManager.Settings.AddPrefix("key1.children");
                     var result = conn.Lists.RangeString(0, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
                     Assert.Contains(TestSettings.KeyPrefix + "key2", result);
                     _redisCacher.Set("key1", "value3");
@@ -211,7 +209,7 @@ namespace CacheSleeve.Tests
                 using (var conn = new RedisConnection(TestSettings.RedisHost, TestSettings.RedisPort, -1, TestSettings.RedisPassword))
                 {
                     conn.Open();
-                    var childrenKey = Manager.Settings.AddPrefix("key1.children");
+                    var childrenKey = CacheManager.Settings.AddPrefix("key1.children");
                     var result = conn.Lists.RangeString(0, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
                     Assert.Contains(TestSettings.KeyPrefix + "key2", result);
                     _redisCacher.Remove("key1");
@@ -226,7 +224,7 @@ namespace CacheSleeve.Tests
                 _redisCacher.Set("key1", "value1");
                 _redisCacher.Set("key2", "value2", "key1");
                 var result = _redisCacher.Get<string>("key2.parent");
-                Assert.Equal(Manager.Settings.AddPrefix("key1"), result);
+                Assert.Equal(CacheManager.Settings.AddPrefix("key1"), result);
                 _redisCacher.Remove("key2");
                 result = _redisCacher.Get<string>("key2.parent");
                 Assert.Equal(null, result);

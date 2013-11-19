@@ -7,17 +7,17 @@ using CacheSleeve.Utilities;
 
 namespace CacheSleeve
 {
-    public sealed class Manager
+    public sealed class CacheManager
     {
         private bool _setup;
         
         #region Singleton Setup
 
-		private Manager()
+		private CacheManager()
 		{
 		}
 
-		public static Manager Settings
+		public static CacheManager Settings
 		{
 			get
 			{
@@ -31,7 +31,7 @@ namespace CacheSleeve
 			{
 			}
 
-			internal static readonly Manager Settings = new Manager();
+			internal static readonly CacheManager Settings = new CacheManager();
 		}
 
 		#endregion

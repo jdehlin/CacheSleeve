@@ -4,13 +4,13 @@ namespace CacheSleeve
 {
     public class HybridCacher : ICacher
     {
-        private readonly Manager _cacheSleeve;
+        private readonly CacheManager _cacheSleeve;
         private readonly RedisCacher _remoteCacher;
         private readonly HttpContextCacher _localCacher;
 
         public HybridCacher()
         {
-            _cacheSleeve = Manager.Settings;
+            _cacheSleeve = CacheManager.Settings;
 
             _remoteCacher = _cacheSleeve.RemoteCacher;
             _localCacher = _cacheSleeve.LocalCacher;
