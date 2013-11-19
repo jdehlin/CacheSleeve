@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace CacheSleeve
 {
@@ -17,16 +16,6 @@ namespace CacheSleeve
         /// The requested item or null.
         /// </returns>
         T Get<T>(string key);
-
-        /// <summary>
-        /// Retrieves multiple items from the cache. 
-        /// The default value of T is set for all keys that do not exist.
-        /// </summary>
-        /// <param name="keys">The list of identifiers for the items to retrieve.</param>
-        /// <returns>
-        /// A dictionary of key and values.
-        /// </returns>
-        Dictionary<string, T> GetAll<T>(IEnumerable<string> keys = null);
 
         /// <summary>
         /// Insert an item into the cache.
@@ -72,13 +61,6 @@ namespace CacheSleeve
         /// This will overwrite the value at the existing key if one exists.
         /// </remarks>
         bool Set<T>(string key, T value, TimeSpan expiresIn, string parentKey = null);
-
-        /// <summary>
-        /// Insert multiple items into the cache.
-        /// </summary>
-        /// <typeparam name="T">The type of the items to be inserted</typeparam>
-        /// <param name="values">A dictionary of the keys and values to be inserted.</param>
-        void SetAll<T>(Dictionary<string, T> values);
 
         /// <summary>
         /// Deletes the specified item from the cache.

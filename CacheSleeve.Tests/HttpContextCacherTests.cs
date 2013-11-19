@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Web;
@@ -122,64 +120,6 @@ namespace CacheSleeve.Tests
                 Thread.Sleep(110);
                 result = _httpContextCacher.Get<string>("key");
                 Assert.Equal(null, result);
-            }
-        }
-
-        public class BulkOperations : HttpContextCacherTests
-        {
-            [Fact]
-            public void CanSetAndGetMultipleStringItems()
-            {
-                var input = new Dictionary<string, string> { { "key1", "value1" }, { "key2", "value2" } };
-                _httpContextCacher.SetAll(input);
-                var result = _httpContextCacher.GetAll<string>(input.Keys);
-                Assert.Equal("value1", result["key1"]);
-                Assert.Equal("value2", result["key2"]);
-            }
-
-            [Fact]
-            public void CanSetAndGetMultipleByteArrayItems()
-            {
-                var input = new Dictionary<string, byte[]> { { "key1", new byte[] { 0x20, 0x20, 0x20 } }, { "key2", new byte[] { 0x20, 0x20 } } };
-                _httpContextCacher.SetAll(input);
-                var result = _httpContextCacher.GetAll<byte[]>(input.Keys);
-                Assert.Equal(new byte[] { 0x20, 0x20, 0x20 }, result["key1"]);
-                Assert.Equal(new byte[] { 0x20, 0x20 }, result["key2"]);
-                Thread.Sleep(100);
-            }
-
-            [Fact]
-            public void CanSetAndGetMultipleObjectItems()
-            {
-                var george = TestSettings.George;
-                var georgeJr = new Monkey("George Jr.");
-                var input = new Dictionary<string, Monkey> { { "key1", george }, { "key2", georgeJr } };
-                _httpContextCacher.SetAll(input);
-                var result = _httpContextCacher.GetAll<Monkey>(input.Keys);
-                Assert.Equal("George", result["key1"].Name);
-                Assert.Equal("George Jr.", result["key2"].Name);
-                Thread.Sleep(100);
-            }
-
-            [Fact]
-            public void FlushRemovesAllItems()
-            {
-                var input = new Dictionary<string, string> { { "key1", "value1" }, { "key2", "value2" } };
-                _httpContextCacher.SetAll(input);
-                _httpContextCacher.FlushAll();
-                var result = _httpContextCacher.GetAll<string>(input.Keys);
-                Assert.Equal(null, result["key1"]);
-                Assert.Equal(null, result["key2"]);
-            }
-
-            [Fact]
-            public void GetAllWithNoKeyListReturnsAllItems()
-            {
-                var input = new Dictionary<string, string> { { "key1", "value1" }, { "key2", "value2" } };
-                _httpContextCacher.SetAll(input);
-                var result = _httpContextCacher.GetAll<string>();
-                Assert.Equal("value1", result["key1"]);
-                Assert.Equal("value2", result["key2"]);
             }
         }
 

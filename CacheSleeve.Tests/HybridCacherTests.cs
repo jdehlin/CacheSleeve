@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -93,17 +92,6 @@ namespace CacheSleeve.Tests
             }
 
             [Fact]
-            public void SetAllCausesPublishRemoveForAll()
-            {
-                var messages = new List<string>();
-                SubscriptionHit += (key, message) => messages.Add(message);
-                _hybridCacher.SetAll(new Dictionary<string, string> { { "key1", "value1" }, { "key2", "value2" } });
-                Thread.Sleep(30);
-                Assert.Contains("key1", messages);
-                Assert.Contains("key2", messages);
-            }
-
-            [Fact]
             public void RemoveCausesPublishRemove()
             {
                 var lastMessage = default(string);
@@ -121,37 +109,6 @@ namespace CacheSleeve.Tests
                 _hybridCacher.FlushAll();
                 Thread.Sleep(30);
                 Assert.Equal("flush", lastMessage);
-            }
-        }
-
-        public class BulkOperations : HybridCacherTests
-        {
-            [Fact]
-            public void SetAllCachesRemote()
-            {
-                var input = new Dictionary<string, string> { { "key1", "value1" }, { "key2", "value2" } };
-                _hybridCacher.SetAll(input);
-                var remoteResult = _remoteCacher.Get<string>("key1");
-                Assert.Equal("value1", remoteResult);
-            }
-
-            [Fact]
-            public void GetAllGetsFromLocalCacheFirst()
-            {
-                _remoteCacher.Set("key", "value1");
-                _localCacher.Set("key", "value2");
-                var result = _hybridCacher.GetAll<string>(new List<string> {"key"});
-                Assert.Equal("value2", result["key"]);
-            }
-
-            [Fact]
-            public void GetAllGetsFromRemoteCacheIfAnyNotInLocal()
-            {
-                _localCacher.Set("key1", "value1");
-                _remoteCacher.Set("key2", "value2");
-                var result = _hybridCacher.GetAll<string>(new List<string> {"key1", "key2"});
-                Assert.Equal(null, result["key1"]);
-                Assert.Equal("value2", result["key2"]);
             }
         }
 

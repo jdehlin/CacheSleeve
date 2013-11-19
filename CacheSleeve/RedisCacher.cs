@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using BookSleeve;
 using Newtonsoft.Json;
 
@@ -48,59 +46,6 @@ namespace CacheSleeve
             }
         }
 
-        public Dictionary<string, T> GetAll<T>(IEnumerable<string> keys = null)
-        {
-            if (keys == null)
-                using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
-                {
-                    conn.Open();
-                    keys = conn.Keys.Find(Db, _cacheSleeve.AddPrefix("*")).Result;
-                    keys = keys.Select(k => _cacheSleeve.StripPrefix(k));
-                }
-
-            var keyByteValues = default(byte[][]);
-            var keyStringValues = default(string[]);
-            var keysArray = keys.Select(k => _cacheSleeve.AddPrefix(k)).ToArray();
-            var results = new Dictionary<string, T>();
-
-            using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
-            {
-                conn.Open();
-                if (typeof (T) == typeof (byte[]))
-                    keyByteValues = conn.Strings.Get(Db, keysArray).Result;
-                else
-                    keyStringValues = conn.Strings.GetString(Db, keysArray).Result;
-            }
-
-            var i = 0;
-            if (keyByteValues != null)
-                foreach (var keyValue in keyByteValues)
-                {
-                    var key = _cacheSleeve.StripPrefix(keysArray[i++]);
-                    results[key] = (T)(object)keyValue;
-                }
-            else if (keyStringValues != null)
-                foreach (var keyValue in keyStringValues)
-                {
-                    var key = _cacheSleeve.StripPrefix(keysArray[i++]);
-                    if (keyValue == null)
-                        results[key] = default(T);
-                    else
-                    {
-                        var keyValueString = keyValue;
-                        if (typeof(T) == typeof(string) || typeof(T) == typeof(String))
-                            results[key] = (T)(object)keyValueString;
-                        else
-                            try
-                            {
-                                results[key] = JsonConvert.DeserializeObject<T>(keyValueString);
-                            }
-                            catch (JsonSerializationException) { }
-                    }
-                }
-            return results;
-        }
-
         public bool Set<T>(string key, T value, string parentKey = null)
         {
             if (InternalSet(key, value, parentKey))
@@ -142,35 +87,6 @@ namespace CacheSleeve
                 SetDependencies(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
             }
             return result;
-        }
-
-        public void SetAll<T>(Dictionary<string, T> values)
-        {
-            var valBytes = new Dictionary<string, byte[]>();
-            var valStrings = new Dictionary<string, string>();
-            foreach (var item in values)
-            {
-                if (typeof(T) == typeof(string))
-                    valStrings.Add(_cacheSleeve.AddPrefix(item.Key), item.Value.ToString());
-                else if (typeof (T) == typeof (byte[]))
-                    valBytes.Add(_cacheSleeve.AddPrefix(item.Key), (byte[]) (object) item.Value ?? new byte[] {});
-                else
-                {
-                    var json = JsonConvert.SerializeObject(item.Value);
-                    valStrings.Add(_cacheSleeve.AddPrefix(item.Key), json);
-                }
-                    
-            }
-            using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
-            {
-                conn.Open();
-                if (typeof(T) == typeof(byte[]))
-                    conn.Strings.Set(Db, valBytes);
-                else
-                    conn.Strings.Set(Db, valStrings);
-            }
-            foreach (var key in values.Keys)
-                RemoveDependencies(_cacheSleeve.AddPrefix(key));
         }
 
         public bool Remove(string key)

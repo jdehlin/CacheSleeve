@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Web.Caching;
 
 namespace CacheSleeve
@@ -28,22 +26,6 @@ namespace CacheSleeve
             return (T)cacheEntry.Value;
         }
 
-        public Dictionary<string, T> GetAll<T>(IEnumerable<string> keys = null)
-        {
-            var items = new Dictionary<string, T>();
-            if (keys != null)
-                foreach (var key in keys)
-                    items[_cacheSleeve.StripPrefix(key)] = Get<T>(key);
-            else
-                foreach (DictionaryEntry item in _cache)
-                    if (item.Value.GetType() == typeof(CacheEntry))
-                    {
-                        var cacheItem = (item.Value as CacheEntry).Value;
-                        items.Add(_cacheSleeve.StripPrefix(item.Key.ToString()), (T)cacheItem);
-                    }
-            return items;
-        }
-
         public bool Set<T>(string key, T value, string parentKey = null)
         {
             var entry = new CacheEntry(value, null);
@@ -61,13 +43,7 @@ namespace CacheSleeve
             var entry = new CacheEntry(value, DateTime.UtcNow.Add(expiresIn));
             return InternalSet(key, entry, parentKey);
         }
-
-        public void SetAll<T>(Dictionary<string, T> values)
-        {
-            foreach (var entry in values)
-                Set(entry.Key, entry.Value);
-        }
-
+        
         public bool Remove(string key)
         {
             if (_cache.Get(_cacheSleeve.AddPrefix(key)) == null)
