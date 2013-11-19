@@ -69,6 +69,15 @@ namespace CacheSleeve.Tests
                 var result = _hybridCacher.Get<string>("key");
                 Assert.Equal("value1", result);
             }
+
+            [Fact]
+            public void SetsExpirationOfLocalByRemoteTimeToLive()
+            {
+                _remoteCacher.Set("key", "value1", TimeSpan.FromHours(1));
+                var hybridResult = _hybridCacher.Get<string>("key");
+                var ttl = _localCacher.TimeToLive("key");
+                Assert.InRange(ttl, 3500, 3700);
+            }
         }
 
         public class PubSub : HybridCacherTests

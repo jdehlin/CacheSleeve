@@ -261,6 +261,12 @@ namespace CacheSleeve
             }
         }
 
+        /// <summary>
+        /// Adds a child key as a dependency of a parent key.
+        /// When the parent is invalidated by remove, overwrite, or expiration the child will be removed.
+        /// </summary>
+        /// <param name="childKey">The key of the child item.</param>
+        /// <param name="parentKey">The key of the parent item.</param>
         private void SetDependencies(string childKey, string parentKey)
         {
             if (string.IsNullOrWhiteSpace(_cacheSleeve.StripPrefix(childKey)) || string.IsNullOrWhiteSpace(_cacheSleeve.StripPrefix(parentKey)))
@@ -281,6 +287,10 @@ namespace CacheSleeve
             }
         }
 
+        /// <summary>
+        /// Removes all of the dependencies of the key from the cache.
+        /// </summary>
+        /// <param name="key">The key of the item to remove children for.</param>
         private void RemoveDependencies(string key)
         {
             if (string.IsNullOrWhiteSpace(_cacheSleeve.StripPrefix(key)))

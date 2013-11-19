@@ -25,7 +25,14 @@ namespace CacheSleeve
                 return result;
             result = _remoteCacher.Get<T>(key);
             if (result != null)
-                _localCacher.Set(key, result);
+            {
+                var ttl = (int) _remoteCacher.TimeToLive(key);
+                if (ttl > -1)
+                    _localCacher.Set(key, result, TimeSpan.FromSeconds(ttl));
+                else 
+                    _localCacher.Set(key, result);
+            }
+                
             return result;
         }
 

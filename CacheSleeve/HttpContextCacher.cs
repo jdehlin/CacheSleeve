@@ -70,7 +70,7 @@ namespace CacheSleeve
 
         public bool Remove(string key)
         {
-            if (_cache.Get(key) != null)
+            if (_cache.Get(_cacheSleeve.AddPrefix(key)) == null)
                 return false;
             try
             {
@@ -88,6 +88,19 @@ namespace CacheSleeve
             var enumerator = _cache.GetEnumerator();
             while (enumerator.MoveNext())
                 _cache.Remove(enumerator.Key.ToString());
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public int TimeToLive(string key)
+        {
+            var result = (CacheEntry)_cache.Get(_cacheSleeve.AddPrefix(key));
+            if (result == null || result.ExpiresAt == null)
+                return -1;
+            return (int)(result.ExpiresAt.Value - DateTime.UtcNow).TotalSeconds;
         }
 
         /// <summary>
