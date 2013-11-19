@@ -8,6 +8,7 @@ namespace CacheSleeve.Tests
         public static string RedisHost = "localhost";
         public static int RedisPort = 6379;
         public static string RedisPassword = null;
+        public static int RedisDb = 0;
         public static string KeyPrefix = "cs.";
 
         // don't mess with George.. you'll break a lot of tests

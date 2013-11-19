@@ -16,7 +16,7 @@ namespace CacheSleeve.Tests
             // have to fake an http context to use http context cache
             HttpContext.Current = new HttpContext(new HttpRequest(null, "http://tempuri.org", null), new HttpResponse(null));
 
-            CacheManager.Init(TestSettings.RedisHost, TestSettings.RedisPort, TestSettings.RedisPassword, TestSettings.KeyPrefix);
+            CacheManager.Init(TestSettings.RedisHost, TestSettings.RedisPort, TestSettings.RedisPassword, TestSettings.RedisDb, TestSettings.KeyPrefix);
 
             _redisCacher = CacheManager.Settings.RemoteCacher;
         }

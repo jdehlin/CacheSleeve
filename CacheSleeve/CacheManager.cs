@@ -36,7 +36,7 @@ namespace CacheSleeve
 
 		#endregion
 
-        public static void Init(string redisHost, int redisPort = 6379, string redisPassword = null, string keyPrefix = "cs.")
+        public static void Init(string redisHost, int redisPort = 6379, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.")
         {
             if (Settings._setup)
                 if (!UnitTestDetector.IsRunningFromXunit) throw new InvalidOperationException("Cannot reinitialize CacheSleeve");
