@@ -186,13 +186,49 @@ namespace CacheSleeve.Tests
         public class Dependencies : HttpContextCacherTests
         {
             [Fact]
-            public void DeleteParentAlsoDeletesChildren()
+            public void DeleteParentAlsoDeletesChildrenForSet()
             {
                 _httpContextCacher.Set("parent", "value1");
                 _httpContextCacher.Set("child", "value2", "parent");
                 var result = _httpContextCacher.Get<string>("child");
                 Assert.Equal("value2", result);
                 _httpContextCacher.Remove("parent");
+                result = _httpContextCacher.Get<string>("child");
+                Assert.Equal(null, result);
+            }
+
+            [Fact]
+            public void DeleteParentAlsoDeletesChildrenForSetWithDateTime()
+            {
+                _httpContextCacher.Set("parent", "value1");
+                _httpContextCacher.Set("child", "value2", DateTime.Now.AddHours(1), "parent");
+                var result = _httpContextCacher.Get<string>("child");
+                Assert.Equal("value2", result);
+                _httpContextCacher.Remove("parent");
+                result = _httpContextCacher.Get<string>("child");
+                Assert.Equal(null, result);
+            }
+
+            [Fact]
+            public void DeleteParentAlsoDeletesChildrenForSetWithTimeSpan()
+            {
+                _httpContextCacher.Set("parent", "value1");
+                _httpContextCacher.Set("child", "value2", TimeSpan.FromHours(1), "parent");
+                var result = _httpContextCacher.Get<string>("child");
+                Assert.Equal("value2", result);
+                _httpContextCacher.Remove("parent");
+                result = _httpContextCacher.Get<string>("child");
+                Assert.Equal(null, result);
+            }
+
+            [Fact]
+            public void OverwritingParentRemovesChildren()
+            {
+                _httpContextCacher.Set("parent", "value1");
+                _httpContextCacher.Set("child", "value2", "parent");
+                var result = _httpContextCacher.Get<string>("child");
+                Assert.Equal("value2", result);
+                _httpContextCacher.Set("parent", "value3");
                 result = _httpContextCacher.Get<string>("child");
                 Assert.Equal(null, result);
             }

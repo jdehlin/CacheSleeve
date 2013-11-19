@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Web;
+using BookSleeve;
 using CacheSleeve.Tests.TestObjects;
 using Xunit;
 
@@ -173,6 +174,111 @@ namespace CacheSleeve.Tests
                 var result = _redisCacher.GetAll<string>();
                 Assert.Equal("value1", result["key1"]);
                 Assert.Equal("value2", result["key2"]);
+            }
+        }
+
+        public class Dependencies : RedisCacherTests
+        {
+            [Fact]
+            public void SetWithParentAddsKeyToParentsChildren()
+            {
+                _redisCacher.Set("key1", "value1");
+                _redisCacher.Set("key2", "value2", "key1");
+                using (var conn = new RedisConnection(TestSettings.RedisHost, TestSettings.RedisPort, -1, TestSettings.RedisPassword))
+                {
+                    conn.Open();
+                    var childrenKey = Manager.Settings.AddPrefix("key1.children");
+                    var result = conn.Lists.RangeString(0, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
+                    Assert.Contains(TestSettings.KeyPrefix + "key2", result);
+                }
+            }
+
+            [Fact]
+            public void ParentsTimeToLiveAddedToChildrenList()
+            {
+                _redisCacher.Set("key1", "value1", DateTime.Now.AddHours(1));
+                _redisCacher.Set("key2", "value2", "key1");
+                var result = _redisCacher.TimeToLive("key1.children");
+                Assert.InRange(result, 3500, 3700);
+            }
+
+            [Fact]
+            public void ParentsTimeToLiveAddedToChildren()
+            {
+                _redisCacher.Set("key1", "value1", DateTime.Now.AddHours(1));
+                _redisCacher.Set("key2", "value2", "key1");
+                var result = _redisCacher.TimeToLive("key2");
+                Assert.InRange(result, 3500, 3700);
+            }
+
+            [Fact]
+            public void OverwritingItemRemovesChildren()
+            {
+                _redisCacher.Set("key1", "value1");
+                _redisCacher.Set("key2", "value2", "key1");
+                var result = _redisCacher.Get<string>("key2");
+                Assert.Equal("value2", result);
+                _redisCacher.Set("key1", "value3");
+                result = _redisCacher.Get<string>("key2");
+                Assert.Equal(null, result);
+            }
+
+            [Fact]
+            public void OverwritingItemRemovesChildList()
+            {
+                _redisCacher.Set("key1", "value1");
+                _redisCacher.Set("key2", "value2", "key1");
+                using (var conn = new RedisConnection(TestSettings.RedisHost, TestSettings.RedisPort, -1, TestSettings.RedisPassword))
+                {
+                    conn.Open();
+                    var childrenKey = Manager.Settings.AddPrefix("key1.children");
+                    var result = conn.Lists.RangeString(0, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
+                    Assert.Contains(TestSettings.KeyPrefix + "key2", result);
+                    _redisCacher.Set("key1", "value3");
+                    result = conn.Lists.RangeString(0, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
+                    Assert.Equal(0, result.Length);
+                }
+            }
+
+            [Fact]
+            public void OverwritingItemsWithSetAllRemovesChildren()
+            {
+                _redisCacher.Set("key1", "value1");
+                _redisCacher.Set("key2", "value2", "key1");
+                var result = _redisCacher.Get<string>("key2");
+                Assert.Equal("value2", result);
+                _redisCacher.SetAll(new Dictionary<string, string> { { "key1", "value3" } });
+                result = _redisCacher.Get<string>("key2");
+                Assert.Equal(null, result);
+            }
+
+            [Fact]
+            public void RemovingItemRemovesChildren()
+            {
+                _redisCacher.Set("key1", "value1");
+                _redisCacher.Set("key2", "value2", "key1");
+                var result = _redisCacher.Get<string>("key2");
+                Assert.Equal("value2", result);
+                _redisCacher.Remove("key1");
+                result = _redisCacher.Get<string>("key2");
+                Assert.Equal(null, result);
+            }
+
+            [Fact]
+            public void RemovingItemRemovesChildList()
+            {
+                _redisCacher.Set("key1", "value1");
+                _redisCacher.Set("key2", "value2", "key1");
+                using (var conn = new RedisConnection(TestSettings.RedisHost, TestSettings.RedisPort, -1, TestSettings.RedisPassword))
+                {
+                    conn.Open();
+                    var childrenKey = Manager.Settings.AddPrefix("key1.children");
+                    var result = conn.Lists.RangeString(0, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
+                    Assert.Contains(TestSettings.KeyPrefix + "key2", result);
+                    _redisCacher.Remove("key1");
+                    result = conn.Lists.RangeString(0, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
+                    Assert.Equal(0, result.Length);
+                }
             }
         }
 

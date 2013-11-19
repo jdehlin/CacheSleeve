@@ -104,7 +104,10 @@ namespace CacheSleeve
         public bool Set<T>(string key, T value, string parentKey = null)
         {
             if (InternalSet(key, value, parentKey))
+            {
+                RemoveDependencies(_cacheSleeve.AddPrefix(key));
                 SetDependencies(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
+            }
             return true;
         }
 
@@ -119,6 +122,7 @@ namespace CacheSleeve
                     var seconds = (int) (expiresAt - DateTime.Now).TotalSeconds;
                     result = conn.Keys.Expire(Db, _cacheSleeve.AddPrefix(key), seconds).Result;
                 }
+                RemoveDependencies(_cacheSleeve.AddPrefix(key));
                 SetDependencies(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
             }
             return result;
@@ -134,6 +138,7 @@ namespace CacheSleeve
                     conn.Open();
                     result = conn.Keys.Expire(Db, _cacheSleeve.AddPrefix(key), (int) expiresIn.TotalSeconds).Result;
                 }
+                RemoveDependencies(_cacheSleeve.AddPrefix(key));
                 SetDependencies(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
             }
             return result;
@@ -164,6 +169,8 @@ namespace CacheSleeve
                 else
                     conn.Strings.Set(Db, valStrings);
             }
+            foreach (var key in values.Keys)
+                RemoveDependencies(_cacheSleeve.AddPrefix(key));
         }
 
         public bool Remove(string key)
@@ -171,7 +178,12 @@ namespace CacheSleeve
             using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
             {
                 conn.Open();
-                return conn.Keys.Remove(Db, _cacheSleeve.AddPrefix(key)).Result;
+                if (conn.Keys.Remove(Db, _cacheSleeve.AddPrefix(key)).Result)
+                {
+                    RemoveDependencies(_cacheSleeve.AddPrefix(key));
+                    return true;
+                }
+                return false;
             }
         }
 
@@ -215,6 +227,14 @@ namespace CacheSleeve
             }
         }
 
+        /// <summary>
+        /// Shared insert for public wrappers.
+        /// </summary>
+        /// <typeparam name="T">The type of the item to insert.</typeparam>
+        /// <param name="key">The key of the item to insert.</param>
+        /// <param name="value">The value of the item to insert.</param>
+        /// <param name="parentKey">The key of the item that this item is a child of.</param>
+        /// <returns></returns>
         private bool InternalSet<T>(string key, T value, string parentKey = null)
         {
             using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
@@ -248,24 +268,31 @@ namespace CacheSleeve
 
             using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
             {
-                var children = Get<List<string>>(parentKey + ".children");
-                if (children == null)
-                    conn.Strings.Set(Db, parentKey + ".children", JsonConvert.SerializeObject(new List<string> { childKey }));
-                else
-                {
-                    children.Add(childKey);
-                    conn.Strings.Set(Db, parentKey + ".children", JsonConvert.SerializeObject(children));
-                }
-                conn.Strings.Set(Db, childKey + ".parent", parentKey);
-
-                // make sure the dependency mappings expire when the parent does
+                conn.Open();
+                conn.Lists.AddLast(Db, parentKey + ".children", childKey);
                 var ttl = (int)conn.Keys.TimeToLive(Db, parentKey).Result;
+                var children = conn.Lists.RangeString(Db, parentKey + ".children", 0, (int)conn.Lists.GetLength(Db, parentKey + ".children").Result).Result.ToList();
                 if (ttl > -1)
                 {
-                    conn.Keys.Expire(Db, parentKey + ".dependencies", ttl);
-                    conn.Keys.Expire(Db, childKey + ".parent", ttl);
-                    conn.Keys.Expire(Db, childKey, ttl);
+                    conn.Keys.Expire(Db, parentKey + ".children", ttl);
+                    foreach (var child in children)
+                        conn.Keys.Expire(Db, child, ttl);
                 }
+            }
+        }
+
+        private void RemoveDependencies(string key)
+        {
+            if (string.IsNullOrWhiteSpace(_cacheSleeve.StripPrefix(key)))
+                return;
+
+            using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
+            {
+                conn.Open();
+                var children = conn.Lists.RangeString(Db, key + ".children", 0, (int)conn.Lists.GetLength(Db, key + ".children").Result).Result.ToList();
+                foreach (var child in children)
+                    conn.Keys.Remove(Db, child);
+                conn.Keys.Remove(Db, key + ".children");
             }
         }
     }
