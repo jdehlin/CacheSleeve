@@ -51,6 +51,7 @@ namespace CacheSleeve
             try
             {
                 _cache.Remove(_cacheSleeve.AddPrefix(key));
+                _cache.Remove(_cacheSleeve.AddPrefix(key + ".parent"));
                 return true;
             }
             catch (Exception)

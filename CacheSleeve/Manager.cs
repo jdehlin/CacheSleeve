@@ -104,6 +104,8 @@ namespace CacheSleeve
         /// <returns>The key without the prefix.</returns>
         public string StripPrefix(string key)
         {
+            if (key == null)
+                return null;
             var regex = new Regex(string.Format("^{0}", KeyPrefix));
             return regex.Replace(key, String.Empty);
         }

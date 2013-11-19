@@ -112,6 +112,23 @@ namespace CacheSleeve.Tests
             }
         }
 
+        public class Dependencies : HybridCacherTests
+        {
+            [Fact]
+            public void GetSetsRemoteDependencyOnLocal()
+            {
+                _hybridCacher.Set("key1", "value1");
+                _hybridCacher.Get<string>("key1");
+                _hybridCacher.Set("key2", "value2", "key1");
+                _hybridCacher.Get<string>("key2");
+                var result = _localCacher.Get<string>("key2");
+                Assert.Equal("value2", result);
+                _localCacher.Remove("key1");
+                result = _localCacher.Get<string>("key2");
+                Assert.Equal(null, result);
+            }
+        }
+
         public void Dispose()
         {
             _hybridCacher.FlushAll();

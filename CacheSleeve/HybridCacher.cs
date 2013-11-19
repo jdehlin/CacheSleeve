@@ -4,15 +4,16 @@ namespace CacheSleeve
 {
     public class HybridCacher : ICacher
     {
+        private readonly Manager _cacheSleeve;
         private readonly RedisCacher _remoteCacher;
         private readonly HttpContextCacher _localCacher;
 
         public HybridCacher()
         {
-            var cacheSleeve = Manager.Settings;
+            _cacheSleeve = Manager.Settings;
 
-            _remoteCacher = cacheSleeve.RemoteCacher;
-            _localCacher = cacheSleeve.LocalCacher;
+            _remoteCacher = _cacheSleeve.RemoteCacher;
+            _localCacher = _cacheSleeve.LocalCacher;
         }
 
 
@@ -25,12 +26,13 @@ namespace CacheSleeve
             if (result != null)
             {
                 var ttl = (int) _remoteCacher.TimeToLive(key);
+                var parentKey = _remoteCacher.Get<string>(key + ".parent");
                 if (ttl > -1)
-                    _localCacher.Set(key, result, TimeSpan.FromSeconds(ttl));
-                else 
-                    _localCacher.Set(key, result);
+                    _localCacher.Set(key, result, TimeSpan.FromSeconds(ttl), _cacheSleeve.StripPrefix(parentKey));
+                else
+                    _localCacher.Set(key, result, _cacheSleeve.StripPrefix(parentKey));
+                result = _localCacher.Get<T>(key);
             }
-                
             return result;
         }
 

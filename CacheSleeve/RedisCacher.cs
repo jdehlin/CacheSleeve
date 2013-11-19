@@ -97,6 +97,7 @@ namespace CacheSleeve
                 if (conn.Keys.Remove(Db, _cacheSleeve.AddPrefix(key)).Result)
                 {
                     RemoveDependencies(_cacheSleeve.AddPrefix(key));
+                    conn.Keys.Remove(Db, _cacheSleeve.AddPrefix(key + ".parent"));
                     return true;
                 }
                 return false;
@@ -192,11 +193,13 @@ namespace CacheSleeve
             {
                 conn.Open();
                 conn.Lists.AddLast(Db, parentKey + ".children", childKey);
-                var ttl = (int)conn.Keys.TimeToLive(Db, parentKey).Result;
-                var children = conn.Lists.RangeString(Db, parentKey + ".children", 0, (int)conn.Lists.GetLength(Db, parentKey + ".children").Result).Result.ToList();
+                conn.Strings.Set(Db, childKey + ".parent", parentKey);
+                var ttl = (int)conn.Keys.TimeToLive(Db, parentKey).Result;                
                 if (ttl > -1)
                 {
+                    var children = conn.Lists.RangeString(Db, parentKey + ".children", 0, (int)conn.Lists.GetLength(Db, parentKey + ".children").Result).Result.ToList();
                     conn.Keys.Expire(Db, parentKey + ".children", ttl);
+                    conn.Keys.Expire(Db, childKey + ".parent", ttl);
                     foreach (var child in children)
                         conn.Keys.Expire(Db, child, ttl);
                 }
@@ -217,7 +220,11 @@ namespace CacheSleeve
                 conn.Open();
                 var children = conn.Lists.RangeString(Db, key + ".children", 0, (int)conn.Lists.GetLength(Db, key + ".children").Result).Result.ToList();
                 foreach (var child in children)
+                {
                     conn.Keys.Remove(Db, child);
+                    conn.Keys.Remove(Db, child + ".parent");
+                }
+                    
                 conn.Keys.Remove(Db, key + ".children");
             }
         }
