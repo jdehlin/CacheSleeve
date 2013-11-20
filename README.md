@@ -6,7 +6,7 @@ Overview
 --------
 CacheSleeve lets you easily add distributed in-memory caching to your ASP.NET projects.
 
-Using CacheSleeves Hybrid Cacher you can simply add items to the cache and they will automatically be synced across all servers in your farm using a combination of Redis and in-memory caching.
+Using CacheSleeves HybridCacher you can simply add items to the cache and they will automatically be synced across all servers in your farm using a combination of Redis and in-memory caching.
 
 Uses Marc Gravell's [BookSleeve](https://code.google.com/p/booksleeve/) for interacting with Redis.
 
@@ -28,7 +28,7 @@ it will use its local in-memory cache until the item is invalidated in the distr
 
 All cache invalidation is synced across all connected servers. Remove a cache item on one server and it will automatically be invalidated on all servers.
 
-This invalidation also works for keys which expire due to an expiration date and for parent/child relationships.
+This invalidation also works for keys which are invalidated due to an expiration date/time and for parent/child relationships.
 
 
 ### Cache Dependency
@@ -48,7 +48,7 @@ Setup
 Before you can start using the distributed cache you will need to initialize the CacheSleeve CacheManager with connection details for your Redis server.
 This should only be done once per server connecting to the distributed cache, usually in Application_Start.
 
-If you're running redis on localhost the following is all you need to get the cache manager running:
+If you're running redis on localhost with default settings the following is all you need to get the cache manager running:
 
 ```
 CacheSleeve.CacheManager.Init("localhost");
@@ -77,14 +77,14 @@ Here _item_ is equal to "value" and the cache item has also been stored in Serve
 cacher.Remove("key");
 ```
 
-This invalidates the item with the key "key" in Server A's in-memory cache, The distributed cache, Server B's in-memory cache, and any other connected servers in-memory cache.
+This invalidates the item with the key "key" in Server A's in-memory cache, the distributed cache, Server B's in-memory cache, and any other connected servers in-memory cache.
 
 #### Server B (again)
 ```
 var item = cacher.Get<string>("key");
 ```
 
-Here _item_ is now null because the item was invalidated on Server A.
+Here _item_ is now null because it was invalidated on Server A.
 
 
 Examples
