@@ -4,37 +4,35 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using BookSleeve;
 using CacheSleeve.Utilities;
+using Newtonsoft.Json;
 
 namespace CacheSleeve
 {
     public sealed class CacheManager
     {
         private bool _setup;
-        
+
         #region Singleton Setup
 
-		private CacheManager()
-		{
-		}
+        private CacheManager()
+        {
+        }
 
-		public static CacheManager Settings
-		{
-			get
-			{
-				return Nested.Settings;
-			}
-		}
+        public static CacheManager Settings
+        {
+            get { return Nested.Settings; }
+        }
 
-		class Nested
-		{
-			static Nested()
-			{
-			}
+        private class Nested
+        {
+            static Nested()
+            {
+            }
 
-			internal static readonly CacheManager Settings = new CacheManager();
-		}
+            internal static readonly CacheManager Settings = new CacheManager();
+        }
 
-		#endregion
+        #endregion
 
         public static void Init(string redisHost, int redisPort = 6379, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.")
         {
@@ -49,6 +47,16 @@ namespace CacheSleeve
 
             Settings.RemoteCacher = new RedisCacher();
             Settings.LocalCacher = new HttpContextCacher();
+
+            // set global json converter settings
+            JsonConvert.DefaultSettings = (() =>
+                                           {
+                                               var settings = new JsonSerializerSettings
+                                                              {
+                                                                  TypeNameHandling = TypeNameHandling.Objects
+                                                              };
+                                               return settings;
+                                           });
 
             // Setup pub/sub for cache syncing
             var connection = new RedisConnection(redisHost, redisPort, -1, redisPassword);
@@ -71,7 +79,7 @@ namespace CacheSleeve
         /// The prefix added to keys of items cached by CacheSleeve to prevent collisions.
         /// </summary>
         public string KeyPrefix { get; private set; }
-        
+
         /// <summary>
         /// The url to the Redis backplane.
         /// </summary>

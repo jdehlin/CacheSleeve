@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Web;
@@ -171,6 +172,21 @@ namespace CacheSleeve.Tests
                 _httpContextCacher.Set("parent", "value3");
                 result = _httpContextCacher.Get<string>("child");
                 Assert.Equal(null, result);
+            }
+        }
+
+        public class Polymorphism : HttpContextCacherTests
+        {
+            [Fact]
+            public void ProperlySerializesAndDeserializesPolymorphicTypes()
+            {
+                var fruits = new List<Fruit>
+                             {
+                                 new Banana(4, "green")
+                             };
+                _httpContextCacher.Set("key", fruits);
+                var result = _httpContextCacher.Get<List<Fruit>>("key");
+                Assert.IsType<Banana>(result.First());
             }
         }
 

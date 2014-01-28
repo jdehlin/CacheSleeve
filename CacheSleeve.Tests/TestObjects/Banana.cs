@@ -1,6 +1,6 @@
 ﻿namespace CacheSleeve.Tests.TestObjects
 {
-    public class Banana
+    public class Banana : Fruit
     {
         public Banana(int length, string color)
         {
@@ -9,6 +9,5 @@
         }
 
         public int Length { get; set; }
-        public string Color { get; set; }
     }
 }

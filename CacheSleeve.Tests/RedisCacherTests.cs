@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using BookSleeve;
@@ -228,6 +229,21 @@ namespace CacheSleeve.Tests
                 _redisCacher.Remove("key2");
                 result = _redisCacher.Get<string>("key2.parent");
                 Assert.Equal(null, result);
+            }
+        }
+
+        public class Polymorphism : RedisCacherTests
+        {
+            [Fact]
+            public void ProperlySerializesAndDeserializesPolymorphicTypes()
+            {
+                var fruits = new List<Fruit>
+                             {
+                                 new Banana(4, "green")
+                             };
+                _redisCacher.Set("key", fruits);
+                var result = _redisCacher.Get<List<Fruit>>("key");
+                Assert.IsType<Banana>(result.First());
             }
         }
 

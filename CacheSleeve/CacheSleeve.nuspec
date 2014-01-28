@@ -1,17 +1,32 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>$id$</id>
-    <version>0.3.0-beta</version>
-    <title>$title$</title>
+    <id>CacheSleeve</id>
+    <version>1.3.3</version>
+    <title>CacheSleeve</title>
     <authors>Jack Dehlin</authors>
     <owners>Jack Dehlin</owners>
-    <licenseUrl>https://github.com/jdehlin/CacheSleeve</licenseUrl>
-    <projectUrl>https://github.com/jdehlin/CacheSleeve</projectUrl>
+    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
+    <projectUrl>https://github.com/jdehlin/CacheSleeve/</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>$description$</description>
-    <releaseNotes>Initial release.</releaseNotes>
-    <copyright>Copyright 2013</copyright>
+    <description>
+      CacheSleeve lets you easily set up distributed in-memory cache with a Redis backplane for .NET projects.
+    </description>
+    <summary>
+	  
+    </summary>
+    <releaseNotes>
+      Handle polymorphic types when serializing/deserializing.
+    </releaseNotes>
+    <copyright>Copyright Jack Dehlin 2013</copyright>
     <tags>Redis Cache Caching Distributed</tags>
+    <dependencies>
+      <dependency id="BookSleeve" />
+      <dependency id="Newtonsoft.Json" />
+    </dependencies>
   </metadata>
+  <files>
+    <file src="bin\Release\CacheSleeve.dll" target="lib\net40" />
+    <file src="bin\Release\CacheSleeve.pdb" target="lib\net40" />
+  </files>
 </package>
