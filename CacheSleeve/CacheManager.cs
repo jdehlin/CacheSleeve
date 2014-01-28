@@ -47,17 +47,7 @@ namespace CacheSleeve
 
             Settings.RemoteCacher = new RedisCacher();
             Settings.LocalCacher = new HttpContextCacher();
-
-            // set global json converter settings
-            JsonConvert.DefaultSettings = (() =>
-                                           {
-                                               var settings = new JsonSerializerSettings
-                                                              {
-                                                                  TypeNameHandling = TypeNameHandling.Objects
-                                                              };
-                                               return settings;
-                                           });
-
+            
             // Setup pub/sub for cache syncing
             var connection = new RedisConnection(redisHost, redisPort, -1, redisPassword);
             var channel = connection.GetOpenSubscriberChannel();

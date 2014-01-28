@@ -36,7 +36,7 @@ namespace CacheSleeve
                     return (T)(object)result;
                 try
                 {
-                    return JsonConvert.DeserializeObject<T>(result);
+                    return JsonConvert.DeserializeObject<T>(result, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects });
                 }
                 catch (JsonReaderException)
                 {
@@ -166,7 +166,7 @@ namespace CacheSleeve
                         conn.Strings.Set(Db, _cacheSleeve.AddPrefix(key), value as string);
                     else
                     {
-                        var valueString = JsonConvert.SerializeObject(value);
+                        var valueString = JsonConvert.SerializeObject(value, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects });
                         conn.Strings.Set(Db, _cacheSleeve.AddPrefix(key), valueString);                        
                     }
                 }
