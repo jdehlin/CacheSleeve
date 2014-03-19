@@ -80,6 +80,11 @@ namespace CacheSleeve
         }
 
         /// <summary>
+        /// If true then logging is enabled
+        /// </summary>
+        public bool Debug { get; set; }
+
+        /// <summary>
         /// The out of band caching service used as a backplane to share cache across servers.
         /// </summary>
         public RedisCacher RemoteCacher { get; private set; }

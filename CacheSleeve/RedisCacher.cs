@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using BookSleeve;
 using CacheSleeve.Models;
@@ -14,6 +15,7 @@ namespace CacheSleeve
         public RedisCacher()
         {
             _cacheSleeve = CacheManager.Settings;
+            _cacheSleeve.Debug = true;
         }
 
 
@@ -99,6 +101,8 @@ namespace CacheSleeve
                 {
                     RemoveDependencies(_cacheSleeve.AddPrefix(key));
                     conn.Keys.Remove(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix(key + ".parent"));
+                    if (_cacheSleeve.Debug)
+                        Debug.WriteLine("CS Redis: Removed cache item with key {0}", key);
                     return true;
                 }
                 return false;
@@ -189,6 +193,8 @@ namespace CacheSleeve
                         var valueString = JsonConvert.SerializeObject(value, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects });
                         conn.Strings.Set(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix(key), valueString);                        
                     }
+                    if (_cacheSleeve.Debug)
+                        Debug.WriteLine("CS Redis: Set cache item with key {0}", key);
                 }
                 catch (Exception)
                 {

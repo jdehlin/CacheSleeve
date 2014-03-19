@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Web.Caching;
@@ -17,6 +18,7 @@ namespace CacheSleeve
         {
             _cache = System.Web.HttpContext.Current.Cache;
             _cacheSleeve = CacheManager.Settings;
+            _cacheSleeve.Debug = true;
         }
 
 
@@ -57,6 +59,8 @@ namespace CacheSleeve
             {
                 _cache.Remove(_cacheSleeve.AddPrefix(key));
                 _cache.Remove(_cacheSleeve.AddPrefix(key + ".parent"));
+                if (_cacheSleeve.Debug)
+                    Debug.WriteLine("CS HttpContext: Removed cache item with key {0}", key);
                 return true;
             }
             catch (Exception)
@@ -110,6 +114,8 @@ namespace CacheSleeve
                     _cache.Insert(_cacheSleeve.AddPrefix(key), entry, cacheDependency);
                 else
                     _cache.Insert(_cacheSleeve.AddPrefix(key), entry, cacheDependency, entry.ExpiresAt.Value, Cache.NoSlidingExpiration);
+                if (_cacheSleeve.Debug)
+                    Debug.WriteLine("CS HttpContext: Set cache item with key {0}", key);
                 return true;
             }
             catch (Exception)
