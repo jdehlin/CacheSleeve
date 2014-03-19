@@ -1,10 +1,15 @@
 ﻿using System;
-using System.Text;
+using System.IO;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Web.Hosting;
 using BookSleeve;
+using CacheSleeve.Models;
 using CacheSleeve.Utilities;
 using Newtonsoft.Json;
+using RazorEngine;
+using Encoding = System.Text.Encoding;
 
 namespace CacheSleeve
 {
@@ -54,6 +59,24 @@ namespace CacheSleeve
             var channel = connection.GetOpenSubscriberChannel();
             channel.PatternSubscribe("cacheSleeve.remove.*", (key, message) => Settings.LocalCacher.Remove(GetString(message)));
             channel.PatternSubscribe("cacheSleeve.flush*", (key, message) => Settings.LocalCacher.FlushAll());
+        }
+
+        public string GenerateOverview()
+        {
+            const string resourceName = "CacheSleeve.Razor.Overview.cshtml";
+            var model = new Overview
+                        {
+                            RemoteKeys = RemoteCacher.GetAllKeys(),
+                            LocalKeys = LocalCacher.GetAllKeys()
+                        };
+            var assembly = Assembly.GetExecutingAssembly();
+            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                if (stream == null)
+                    return "";
+                using (var reader = new StreamReader(stream))
+                    return Razor.Parse(reader.ReadToEnd(), model);
+            }
         }
 
         /// <summary>

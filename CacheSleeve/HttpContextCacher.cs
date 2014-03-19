@@ -1,5 +1,10 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Web.Caching;
+using CacheSleeve.Models;
 
 namespace CacheSleeve
 {
@@ -65,6 +70,14 @@ namespace CacheSleeve
             var enumerator = _cache.GetEnumerator();
             while (enumerator.MoveNext())
                 _cache.Remove(enumerator.Key.ToString());
+        }
+
+        public IEnumerable<Key> GetAllKeys()
+        {
+            var keys = _cache.Cast<DictionaryEntry>()
+                .Where(de => de.Value.GetType() == typeof(CacheEntry))
+                .Select(de => new Key((de.Key as string), (de.Value as CacheEntry).ExpiresAt));
+            return keys;
         }
 
         /// <summary>

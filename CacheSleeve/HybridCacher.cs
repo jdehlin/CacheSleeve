@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using CacheSleeve.Models;
 
 namespace CacheSleeve
 {
@@ -102,6 +105,13 @@ namespace CacheSleeve
         {
             _remoteCacher.FlushAll();
             _remoteCacher.PublishToKey("cacheSleeve.flush", "");
+        }
+
+        public IEnumerable<Key> GetAllKeys()
+        {
+            var keys = _remoteCacher.GetAllKeys();
+            keys = keys.Union(_localCacher.GetAllKeys());
+            return keys.GroupBy(k => k.KeyName).Select(grp => grp.First());
         }
     }
 }

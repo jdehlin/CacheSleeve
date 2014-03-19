@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using BookSleeve;
+using CacheSleeve.Models;
 using Newtonsoft.Json;
 
 namespace CacheSleeve
@@ -111,6 +113,25 @@ namespace CacheSleeve
                 var keys = conn.Keys.Find(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix("*")).Result;
                 foreach (var key in keys)
                     Remove(_cacheSleeve.StripPrefix(key));
+            }
+        }
+
+        public IEnumerable<Key> GetAllKeys()
+        {
+            using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
+            {
+                conn.Open();
+                var keys = new List<Key>();
+                var keyStrings = conn.Keys.Find(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix("*")).Result;
+                foreach (var keyString in keyStrings)
+                {
+                    var ttl = conn.Keys.TimeToLive(_cacheSleeve.RedisDb, keyString).Result;
+                    var expiration = default(DateTime?);
+                    if (ttl > -1)
+                        expiration = DateTime.Now.AddSeconds(ttl);
+                    keys.Add(new Key(keyString, expiration));
+                }
+                return keys;
             }
         }
 

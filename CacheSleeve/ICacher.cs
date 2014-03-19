@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using CacheSleeve.Models;
 
 namespace CacheSleeve
 {
@@ -75,5 +77,10 @@ namespace CacheSleeve
         /// Clear the whole cache.
         /// </summary>
         void FlushAll();
+
+        /// <summary>
+        /// Returns a list of all available keys
+        /// </summary>
+        IEnumerable<Key> GetAllKeys();
     }
 }

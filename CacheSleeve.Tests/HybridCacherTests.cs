@@ -13,6 +13,7 @@ namespace CacheSleeve.Tests
         private HybridCacher _hybridCacher;
         private RedisCacher _remoteCacher;
         private HttpContextCacher _localCacher;
+        private readonly CacheManager _cacheSleeve;
 
         private delegate void SubscriptionHitHandler(string key, string message);
         private event SubscriptionHitHandler SubscriptionHit;
@@ -28,6 +29,7 @@ namespace CacheSleeve.Tests
             HttpContext.Current = new HttpContext(new HttpRequest(null, "http://tempuri.org", null), new HttpResponse(null));
 
             CacheManager.Init(TestSettings.RedisHost, TestSettings.RedisPort, TestSettings.RedisPassword, TestSettings.RedisDb, TestSettings.KeyPrefix);
+            _cacheSleeve = CacheManager.Settings;
 
             var cacheSleeve = CacheManager.Settings;
 
@@ -76,6 +78,16 @@ namespace CacheSleeve.Tests
                 var hybridResult = _hybridCacher.Get<string>("key");
                 var ttl = _localCacher.TimeToLive("key");
                 Assert.InRange(ttl, 3500, 3700);
+            }
+
+            [Fact]
+            public void CanGetAllKeys()
+            {
+                _remoteCacher.Set("key1", "value");
+                _localCacher.Set("key2", "value");
+                var result = _hybridCacher.GetAllKeys();
+                Assert.True(result.Select(k => k.KeyName).Contains(_cacheSleeve.AddPrefix("key1")));
+                Assert.True(result.Select(k => k.KeyName).Contains(_cacheSleeve.AddPrefix("key2")));
             }
         }
 

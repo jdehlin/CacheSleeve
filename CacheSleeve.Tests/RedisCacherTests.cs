@@ -11,6 +11,7 @@ namespace CacheSleeve.Tests
     public class RedisCacherTests : IDisposable
     {
         private RedisCacher _redisCacher;
+        private readonly CacheManager _cacheSleeve;
 
         public RedisCacherTests()
         {
@@ -18,6 +19,7 @@ namespace CacheSleeve.Tests
             HttpContext.Current = new HttpContext(new HttpRequest(null, "http://tempuri.org", null), new HttpResponse(null));
 
             CacheManager.Init(TestSettings.RedisHost, TestSettings.RedisPort, TestSettings.RedisPassword, TestSettings.RedisDb, TestSettings.KeyPrefix);
+            _cacheSleeve = CacheManager.Settings;
 
             _redisCacher = CacheManager.Settings.RemoteCacher;
         }
@@ -84,6 +86,32 @@ namespace CacheSleeve.Tests
                 result = _redisCacher.Get<string>("key");
                 Assert.Equal(null, result);
             }
+
+            [Fact]
+            public void CanGetAllKeys()
+            {
+                _redisCacher.Set("key1", "value");
+                _redisCacher.Set("key2", "value");
+                var result = _redisCacher.GetAllKeys();
+                Assert.True(result.Select(k => k.KeyName).Contains(_cacheSleeve.AddPrefix("key1")));
+                Assert.True(result.Select(k => k.KeyName).Contains(_cacheSleeve.AddPrefix("key2")));
+            }
+
+            [Fact]
+            public void GetAllKeysIncludesExpiration()
+            {
+                _redisCacher.Set("key1", "value", DateTime.Now.AddMinutes(1));
+                var result = _redisCacher.GetAllKeys();
+                Assert.InRange(result.ToList()[0].ExpirationDate.Value, DateTime.Now.AddSeconds(58), DateTime.Now.AddSeconds(62));
+            }
+
+            [Fact]
+            public void IfTimeToLiveIsNegative1ThenExpirationIsNull()
+            {
+                _redisCacher.Set("key1", "value");
+                var result = _redisCacher.GetAllKeys();
+                Assert.Equal(null, result.First().ExpirationDate);
+            }
         }
 
         public class Failsafes : RedisCacherTests
@@ -129,7 +157,7 @@ namespace CacheSleeve.Tests
                 {
                     conn.Open();
                     var childrenKey = CacheManager.Settings.AddPrefix("key1.children");
-                    var result = conn.Lists.RangeString(0, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
+                    var result = conn.Lists.RangeString(_cacheSleeve.RedisDb, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
                     Assert.Contains(TestSettings.KeyPrefix + "key2", result);
                 }
             }
@@ -182,10 +210,10 @@ namespace CacheSleeve.Tests
                 {
                     conn.Open();
                     var childrenKey = CacheManager.Settings.AddPrefix("key1.children");
-                    var result = conn.Lists.RangeString(0, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
+                    var result = conn.Lists.RangeString(_cacheSleeve.RedisDb, childrenKey, 0, (int)conn.Lists.GetLength(_cacheSleeve.RedisDb, childrenKey).Result).Result;
                     Assert.Contains(TestSettings.KeyPrefix + "key2", result);
                     _redisCacher.Set("key1", "value3");
-                    result = conn.Lists.RangeString(0, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
+                    result = conn.Lists.RangeString(_cacheSleeve.RedisDb, childrenKey, 0, (int)conn.Lists.GetLength(_cacheSleeve.RedisDb, childrenKey).Result).Result;
                     Assert.Equal(0, result.Length);
                 }
             }
@@ -211,10 +239,10 @@ namespace CacheSleeve.Tests
                 {
                     conn.Open();
                     var childrenKey = CacheManager.Settings.AddPrefix("key1.children");
-                    var result = conn.Lists.RangeString(0, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
+                    var result = conn.Lists.RangeString(_cacheSleeve.RedisDb, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
                     Assert.Contains(TestSettings.KeyPrefix + "key2", result);
                     _redisCacher.Remove("key1");
-                    result = conn.Lists.RangeString(0, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
+                    result = conn.Lists.RangeString(_cacheSleeve.RedisDb, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
                     Assert.Equal(0, result.Length);
                 }
             }

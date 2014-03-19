@@ -49,6 +49,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CacheManagerTests.cs" />
     <Compile Include="HttpContextCacherTests.cs" />
     <Compile Include="HybridCacherTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

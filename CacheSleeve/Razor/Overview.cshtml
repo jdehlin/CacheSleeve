@@ -1,0 +1,49 @@
+﻿<style>
+    
+    .cs-key {
+        min-width: 400px;
+    }
+
+    .cs-key-name {
+        width: 50%;
+        float: left;
+    }
+
+    .cs-key-expiration {
+        width: 50%;
+        display: inline-block;
+    }
+
+</style>
+
+<div id="cs-overview">
+    
+    <div id="cs-remote">
+        
+        <h2 id="cs-remote-header">Remote Cache Items</h2>
+        
+        @foreach (var key in Model.RemoteKeys)
+        {
+            <div class="cs-key">
+                <div class="cs-key-name">@key.KeyName</div>
+                <div class="cs-key-expiration">@key.ExpirationDate</div>
+            </div>      
+        }
+
+    </div>
+    
+    <div id="cs-local">
+        
+        <h2 id="cs-local-header">Local Cache Items</h2>
+
+        @foreach (var key in Model.LocalKeys)
+        {
+            <div class="cs-key">
+                <div class="cs-key-name">@key.KeyName</div>
+                <div class="cs-key-expiration">@key.ExpirationDate</div>
+            </div>
+        }
+
+    </div>
+
+</div>
