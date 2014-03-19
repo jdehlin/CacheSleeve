@@ -7,7 +7,6 @@ namespace CacheSleeve
 {
     public class RedisCacher : ICacher
     {
-        private const int Db = 0;
         private readonly CacheManager _cacheSleeve;
 
         public RedisCacher()
@@ -22,11 +21,11 @@ namespace CacheSleeve
             {
                 conn.Wait(conn.Open());
                 if (typeof(T) == typeof(byte[]))
-                    return (T)(object)conn.Strings.Get(Db, _cacheSleeve.AddPrefix(key)).Result;
+                    return (T)(object)conn.Strings.Get(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix(key)).Result;
                 string result;
                 try
                 {
-                    result = conn.Strings.GetString(Db, _cacheSleeve.AddPrefix(key)).Result;
+                    result = conn.Strings.GetString(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix(key)).Result;
                 }
                 catch (Exception)
                 {
@@ -65,7 +64,7 @@ namespace CacheSleeve
                 {
                     conn.Open();
                     var seconds = (int) (expiresAt - DateTime.Now).TotalSeconds;
-                    result = conn.Keys.Expire(Db, _cacheSleeve.AddPrefix(key), seconds).Result;
+                    result = conn.Keys.Expire(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix(key), seconds).Result;
                 }
                 RemoveDependencies(_cacheSleeve.AddPrefix(key));
                 SetDependencies(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
@@ -81,7 +80,7 @@ namespace CacheSleeve
                 using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
                 {
                     conn.Open();
-                    result = conn.Keys.Expire(Db, _cacheSleeve.AddPrefix(key), (int) expiresIn.TotalSeconds).Result;
+                    result = conn.Keys.Expire(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix(key), (int)expiresIn.TotalSeconds).Result;
                 }
                 RemoveDependencies(_cacheSleeve.AddPrefix(key));
                 SetDependencies(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
@@ -94,10 +93,10 @@ namespace CacheSleeve
             using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
             {
                 conn.Open();
-                if (conn.Keys.Remove(Db, _cacheSleeve.AddPrefix(key)).Result)
+                if (conn.Keys.Remove(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix(key)).Result)
                 {
                     RemoveDependencies(_cacheSleeve.AddPrefix(key));
-                    conn.Keys.Remove(Db, _cacheSleeve.AddPrefix(key + ".parent"));
+                    conn.Keys.Remove(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix(key + ".parent"));
                     return true;
                 }
                 return false;
@@ -109,7 +108,7 @@ namespace CacheSleeve
             using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
             {
                 conn.Open();
-                var keys = conn.Keys.Find(Db, _cacheSleeve.AddPrefix("*")).Result;
+                var keys = conn.Keys.Find(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix("*")).Result;
                 foreach (var key in keys)
                     Remove(_cacheSleeve.StripPrefix(key));
             }
@@ -125,7 +124,7 @@ namespace CacheSleeve
             using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
             {
                 conn.Open();
-                return conn.Keys.TimeToLive(Db, _cacheSleeve.AddPrefix(key)).Result;
+                return conn.Keys.TimeToLive(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix(key)).Result;
             }
         }
 
@@ -161,13 +160,13 @@ namespace CacheSleeve
                 try
                 {
                     if (bytesValue != null)
-                        conn.Strings.Set(Db, _cacheSleeve.AddPrefix(key), bytesValue);
+                        conn.Strings.Set(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix(key), bytesValue);
                     else if (typeof(T) == typeof(string))
-                        conn.Strings.Set(Db, _cacheSleeve.AddPrefix(key), value as string);
+                        conn.Strings.Set(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix(key), value as string);
                     else
                     {
                         var valueString = JsonConvert.SerializeObject(value, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects });
-                        conn.Strings.Set(Db, _cacheSleeve.AddPrefix(key), valueString);                        
+                        conn.Strings.Set(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix(key), valueString);                        
                     }
                 }
                 catch (Exception)
@@ -192,16 +191,16 @@ namespace CacheSleeve
             using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
             {
                 conn.Open();
-                conn.Lists.AddLast(Db, parentKey + ".children", childKey);
-                conn.Strings.Set(Db, childKey + ".parent", parentKey);
-                var ttl = (int)conn.Keys.TimeToLive(Db, parentKey).Result;                
+                conn.Lists.AddLast(_cacheSleeve.RedisDb, parentKey + ".children", childKey);
+                conn.Strings.Set(_cacheSleeve.RedisDb, childKey + ".parent", parentKey);
+                var ttl = (int)conn.Keys.TimeToLive(_cacheSleeve.RedisDb, parentKey).Result;                
                 if (ttl > -1)
                 {
-                    var children = conn.Lists.RangeString(Db, parentKey + ".children", 0, (int)conn.Lists.GetLength(Db, parentKey + ".children").Result).Result.ToList();
-                    conn.Keys.Expire(Db, parentKey + ".children", ttl);
-                    conn.Keys.Expire(Db, childKey + ".parent", ttl);
+                    var children = conn.Lists.RangeString(_cacheSleeve.RedisDb, parentKey + ".children", 0, (int)conn.Lists.GetLength(_cacheSleeve.RedisDb, parentKey + ".children").Result).Result.ToList();
+                    conn.Keys.Expire(_cacheSleeve.RedisDb, parentKey + ".children", ttl);
+                    conn.Keys.Expire(_cacheSleeve.RedisDb, childKey + ".parent", ttl);
                     foreach (var child in children)
-                        conn.Keys.Expire(Db, child, ttl);
+                        conn.Keys.Expire(_cacheSleeve.RedisDb, child, ttl);
                 }
             }
         }
@@ -218,14 +217,14 @@ namespace CacheSleeve
             using (var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword))
             {
                 conn.Open();
-                var children = conn.Lists.RangeString(Db, key + ".children", 0, (int)conn.Lists.GetLength(Db, key + ".children").Result).Result.ToList();
+                var children = conn.Lists.RangeString(_cacheSleeve.RedisDb, key + ".children", 0, (int)conn.Lists.GetLength(_cacheSleeve.RedisDb, key + ".children").Result).Result.ToList();
                 foreach (var child in children)
                 {
-                    conn.Keys.Remove(Db, child);
-                    conn.Keys.Remove(Db, child + ".parent");
+                    conn.Keys.Remove(_cacheSleeve.RedisDb, child);
+                    conn.Keys.Remove(_cacheSleeve.RedisDb, child + ".parent");
                 }
-                    
-                conn.Keys.Remove(Db, key + ".children");
+
+                conn.Keys.Remove(_cacheSleeve.RedisDb, key + ".children");
             }
         }
     }

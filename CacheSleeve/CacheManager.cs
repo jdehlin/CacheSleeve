@@ -44,6 +44,7 @@ namespace CacheSleeve
             Settings.RedisPort = redisPort;
             Settings.RedisPassword = redisPassword;
             Settings.KeyPrefix = keyPrefix;
+            Settings.RedisDb = redisDb;
 
             Settings.RemoteCacher = new RedisCacher();
             Settings.LocalCacher = new HttpContextCacher();
@@ -84,6 +85,11 @@ namespace CacheSleeve
         /// The password for the Redis backplane.
         /// </summary>
         public string RedisPassword { get; private set; }
+
+        /// <summary>
+        /// The database to use on the Redis server.
+        /// </summary>
+        public int RedisDb { get; private set; }
 
         /// <summary>
         /// Adds the prefix to the key.
