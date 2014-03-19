@@ -1,17 +1,21 @@
-﻿<style>
+﻿@using System
+<style>
     
     .cs-key {
         min-width: 400px;
     }
 
+    .cs-header {
+        font-weight: bold;
+    }
+
     .cs-key-name {
-        width: 50%;
-        float: left;
+        width: 600px;
     }
 
     .cs-key-expiration {
-        width: 50%;
-        display: inline-block;
+        width: 200px;
+        float: left;
     }
 
 </style>
@@ -22,11 +26,24 @@
         
         <h2 id="cs-remote-header">Remote Cache Items</h2>
         
+        <div class="cs-key cs-header">
+            <div class="cs-key-expiration">Minutes Remaining</div>
+            <div class="cs-key-name">Key Name</div>
+        </div>      
         @foreach (var key in Model.RemoteKeys)
         {
             <div class="cs-key">
+                <div class="cs-key-expiration">
+                    @if (key.ExpirationDate != null)
+                    {
+                        <span>@Math.Round(((key.ExpirationDate.Value - DateTime.Now).TotalMinutes), 2)</span>
+                    }
+                    else
+                    {
+                        <span>No Expiration</span>
+                    }
+                </div>
                 <div class="cs-key-name">@key.KeyName</div>
-                <div class="cs-key-expiration">@key.ExpirationDate</div>
             </div>      
         }
 
@@ -35,12 +52,25 @@
     <div id="cs-local">
         
         <h2 id="cs-local-header">Local Cache Items</h2>
-
+        
+        <div class="cs-key cs-header">
+            <div class="cs-key-expiration">Minutes Remaining</div>
+            <div class="cs-key-name">Key Name</div>
+        </div>     
         @foreach (var key in Model.LocalKeys)
         {
             <div class="cs-key">
+                <div class="cs-key-expiration">
+                    @if (key.ExpirationDate != null)
+                    {
+                        <span>@Math.Round(((key.ExpirationDate.Value - DateTime.Now).TotalMinutes), 2)</span>
+                    }
+                    else
+                    {
+                        <span>No Expiration</span>
+                    }
+                </div>
                 <div class="cs-key-name">@key.KeyName</div>
-                <div class="cs-key-expiration">@key.ExpirationDate</div>
             </div>
         }
 
