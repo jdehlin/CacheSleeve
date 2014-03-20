@@ -47,7 +47,7 @@ namespace CacheSleeve
 
         public bool Set<T>(string key, T value, TimeSpan expiresIn, string parentKey = null)
         {
-            var entry = new CacheEntry(value, DateTime.UtcNow.Add(expiresIn));
+            var entry = new CacheEntry(value, DateTime.Now.Add(expiresIn));
             return InternalSet(key, entry, parentKey);
         }
         
@@ -94,7 +94,7 @@ namespace CacheSleeve
             var result = (CacheEntry)_cache.Get(_cacheSleeve.AddPrefix(key));
             if (result == null || result.ExpiresAt == null)
                 return -1;
-            return (int)(result.ExpiresAt.Value - DateTime.UtcNow).TotalSeconds;
+            return (int)(result.ExpiresAt.Value - DateTime.Now).TotalSeconds;
         }
 
         /// <summary>

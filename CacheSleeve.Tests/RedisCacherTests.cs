@@ -144,6 +144,14 @@ namespace CacheSleeve.Tests
                 var result = _redisCacher.TimeToLive("key");
                 Assert.InRange(result, 50, 70);
             }
+
+            [Fact]
+            public void KeysHaveProperExpirationDates()
+            {
+                _redisCacher.Set("key", "value", DateTime.Now.AddMinutes(1));
+                var result = _redisCacher.GetAllKeys();
+                Assert.InRange(result.First().ExpirationDate.Value, DateTime.Now.AddSeconds(58), DateTime.Now.AddSeconds(62));
+            }
         }
 
         public class Dependencies : RedisCacherTests
@@ -257,6 +265,19 @@ namespace CacheSleeve.Tests
                 _redisCacher.Remove("key2");
                 result = _redisCacher.Get<string>("key2.parent");
                 Assert.Equal(null, result);
+            }
+
+            [Fact]
+            public void SettingDependenciesDoesNotScrewUpTimeToLive()
+            {
+                _redisCacher.Set("parent1", "value1", DateTime.Now.AddMinutes(1));
+                var parentTtl = _redisCacher.TimeToLive("parent1");
+                Assert.InRange(parentTtl, 58, 62);
+                _redisCacher.Set("key1", "value1", DateTime.Now.AddMinutes(10), "parent1");
+                var childTtl = _redisCacher.TimeToLive("key1");
+                parentTtl = _redisCacher.TimeToLive("parent1");
+                Assert.InRange(childTtl, 58, 62); // this is not a 10 minute range because when the parent expires so will the child
+                Assert.InRange(parentTtl, 58, 62);
             }
         }
 

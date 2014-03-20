@@ -74,10 +74,10 @@ namespace CacheSleeve.Tests
             [Fact]
             public void SetsExpirationOfLocalByRemoteTimeToLive()
             {
-                _remoteCacher.Set("key", "value1", TimeSpan.FromHours(1));
+                _remoteCacher.Set("key", "value1", DateTime.Now.AddSeconds(120));
                 var hybridResult = _hybridCacher.Get<string>("key");
                 var ttl = _localCacher.TimeToLive("key");
-                Assert.InRange(ttl, 3500, 3700);
+                Assert.InRange(ttl, 118, 122);
             }
 
             [Fact]
@@ -88,6 +88,15 @@ namespace CacheSleeve.Tests
                 var result = _hybridCacher.GetAllKeys();
                 Assert.True(result.Select(k => k.KeyName).Contains(_cacheSleeve.AddPrefix("key1")));
                 Assert.True(result.Select(k => k.KeyName).Contains(_cacheSleeve.AddPrefix("key2")));
+            }
+
+            [Fact]
+            public void ExpirationTransfersFromRemoteToLocal()
+            {
+                _remoteCacher.Set("key1", "value", DateTime.Now.AddSeconds(120));
+                _hybridCacher.Get<string>("key1");
+                var results = _localCacher.GetAllKeys();
+                Assert.InRange(results.First().ExpirationDate.Value, DateTime.Now.AddSeconds(118), DateTime.Now.AddSeconds(122));
             }
         }
 

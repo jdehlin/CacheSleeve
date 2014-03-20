@@ -57,7 +57,7 @@ namespace CacheSleeve.Tests
             Assert.Equal(1, result.Select((c, i) => result.Substring(i)).Count(sub => sub.StartsWith("key1")));
             Assert.Equal(1, result.Select((c, i) => result.Substring(i)).Count(sub => sub.StartsWith("key2")));
         }
-
+        
 
         public void Dispose()
         {

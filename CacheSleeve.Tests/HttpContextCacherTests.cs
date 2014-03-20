@@ -142,6 +142,14 @@ namespace CacheSleeve.Tests
                 result = _httpContextCacher.Get<string>("key");
                 Assert.Equal(null, result);
             }
+
+            [Fact]
+            public void KeysHaveProperExpirationDates()
+            {
+                _httpContextCacher.Set("key", "value", DateTime.Now.AddMinutes(1));
+                var result = _httpContextCacher.GetAllKeys();
+                Assert.InRange(result.First().ExpirationDate.Value, DateTime.Now.AddSeconds(58), DateTime.Now.AddSeconds(62));
+            }
         }
 
         public class Dependencies : HttpContextCacherTests
