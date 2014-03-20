@@ -60,7 +60,7 @@ namespace CacheSleeve
                 _cache.Remove(_cacheSleeve.AddPrefix(key));
                 _cache.Remove(_cacheSleeve.AddPrefix(key + ".parent"));
                 if (_cacheSleeve.Debug)
-                    Debug.WriteLine("CS HttpContext: Removed cache item with key {0}", key);
+                    Trace.WriteLine(string.Format("CS HttpContext: Removed cache item with key {0}", key));
                 return true;
             }
             catch (Exception)
@@ -115,7 +115,7 @@ namespace CacheSleeve
                 else
                     _cache.Insert(_cacheSleeve.AddPrefix(key), entry, cacheDependency, entry.ExpiresAt.Value, Cache.NoSlidingExpiration);
                 if (_cacheSleeve.Debug)
-                    Debug.WriteLine("CS HttpContext: Set cache item with key {0}", key);
+                    Trace.WriteLine(string.Format("CS HttpContext: Set cache item with key {0}", key));
                 return true;
             }
             catch (Exception)

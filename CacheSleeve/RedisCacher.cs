@@ -102,7 +102,7 @@ namespace CacheSleeve
                     RemoveDependencies(_cacheSleeve.AddPrefix(key));
                     conn.Keys.Remove(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix(key + ".parent"));
                     if (_cacheSleeve.Debug)
-                        Debug.WriteLine("CS Redis: Removed cache item with key {0}", key);
+                        Trace.WriteLine(string.Format("CS Redis: Removed cache item with key {0}", key));
                     return true;
                 }
                 return false;
@@ -194,7 +194,7 @@ namespace CacheSleeve
                         conn.Strings.Set(_cacheSleeve.RedisDb, _cacheSleeve.AddPrefix(key), valueString);                        
                     }
                     if (_cacheSleeve.Debug)
-                        Debug.WriteLine("CS Redis: Set cache item with key {0}", key);
+                        Trace.WriteLine(string.Format("CS Redis: Set cache item with key {0}", key));
                 }
                 catch (Exception)
                 {
