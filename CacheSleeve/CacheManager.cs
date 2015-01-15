@@ -1,14 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Linq;
-using System.Web.Hosting;
-using BookSleeve;
 using CacheSleeve.Models;
 using CacheSleeve.Utilities;
-using Newtonsoft.Json;
 using RazorEngine;
+using StackExchange.Redis;
 using Encoding = System.Text.Encoding;
 
 namespace CacheSleeve
@@ -16,6 +15,7 @@ namespace CacheSleeve
     public sealed class CacheManager
     {
         private bool _setup;
+        private ConnectionMultiplexer _redisConnection;
 
         #region Singleton Setup
 
@@ -53,12 +53,16 @@ namespace CacheSleeve
 
             Settings.RemoteCacher = new RedisCacher();
             Settings.LocalCacher = new HttpContextCacher();
-            
+
+            var configuration =
+                ConfigurationOptions.Parse(string.Format("{0}:{1}", Settings.RedisHost, Settings.RedisPort));
+            configuration.AllowAdmin = true;
+            Settings._redisConnection = ConnectionMultiplexer.Connect(configuration);
+
             // Setup pub/sub for cache syncing
-            var connection = new RedisConnection(redisHost, redisPort, -1, redisPassword);
-            var channel = connection.GetOpenSubscriberChannel();
-            channel.PatternSubscribe("cacheSleeve.remove.*", (key, message) => Settings.LocalCacher.Remove(GetString(message)));
-            channel.PatternSubscribe("cacheSleeve.flush*", (key, message) => Settings.LocalCacher.FlushAll());
+            var subscriber = Settings._redisConnection.GetSubscriber();
+            subscriber.Subscribe("cacheSleeve.remove.*", (redisChannel, value) => Settings.LocalCacher.Remove(GetString(value)));
+            subscriber.Subscribe("cacheSleeve.flush*", (redisChannel, value) => Settings.LocalCacher.FlushAll());
         }
 
         public string GenerateOverview()
@@ -93,7 +97,7 @@ namespace CacheSleeve
         /// The local in-memory cache.
         /// </summary>
         public HttpContextCacher LocalCacher { get; private set; }
-
+        
         /// <summary>
         /// The prefix added to keys of items cached by CacheSleeve to prevent collisions.
         /// </summary>
@@ -118,6 +122,18 @@ namespace CacheSleeve
         /// The database to use on the Redis server.
         /// </summary>
         public int RedisDb { get; private set; }
+
+        public IDatabase GetDatebase()
+        {
+            return _redisConnection.GetDatabase(RedisDb);
+        }
+
+        public IEnumerable<RedisKey> GetAllKeys()
+        {
+            var server = _redisConnection.GetServer(string.Format("{0}:{1}", Settings.RedisHost, Settings.RedisPort));
+            var keys = server.Keys(database: Settings.RedisDb, pattern: Settings.AddPrefix("*"));
+            return keys;
+        } 
 
         /// <summary>
         /// Adds the prefix to the key.

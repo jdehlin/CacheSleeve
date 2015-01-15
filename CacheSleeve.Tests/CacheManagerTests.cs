@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Web;
-using BookSleeve;
+using StackExchange.Redis;
 using Xunit;
 using System.Linq;
 
@@ -30,10 +30,14 @@ namespace CacheSleeve.Tests
             CacheManager.Init(TestSettings.RedisHost, TestSettings.RedisPort, TestSettings.RedisPassword, TestSettings.RedisDb, TestSettings.KeyPrefix);
             _cacheSleeve = CacheManager.Settings;
 
-            var conn = new RedisConnection(_cacheSleeve.RedisHost, _cacheSleeve.RedisPort, -1, _cacheSleeve.RedisPassword);
-            var channel = conn.GetOpenSubscriberChannel();
-            channel.PatternSubscribe("cacheSleeve.remove.*", (key, message) => OnSubscriptionHit(key, GetString(message)));
-            channel.PatternSubscribe("cacheSleeve.flush*", (key, message) => OnSubscriptionHit(key, "flush"));
+            var configuration =
+                ConfigurationOptions.Parse(string.Format("{0}:{1}", _cacheSleeve.RedisHost, _cacheSleeve.RedisPort));
+            configuration.AllowAdmin = true;
+            var redisConnection = ConnectionMultiplexer.Connect(configuration);
+            
+            var subscriber = redisConnection.GetSubscriber();
+            subscriber.Subscribe("cacheSleeve.remove.*", (redisChannel, value) => _cacheSleeve.LocalCacher.Remove(GetString(value)));
+            subscriber.Subscribe("cacheSleeve.flush*", (redisChannel, value) => _cacheSleeve.LocalCacher.FlushAll());
 
             _hybridCacher = new HybridCacher();
             _remoteCacher = _cacheSleeve.RemoteCacher;

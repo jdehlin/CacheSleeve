@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using BookSleeve;
 using CacheSleeve.Tests.TestObjects;
 using Xunit;
 
@@ -161,13 +160,10 @@ namespace CacheSleeve.Tests
             {
                 _redisCacher.Set("key1", "value1");
                 _redisCacher.Set("key2", "value2", "key1");
-                using (var conn = new RedisConnection(TestSettings.RedisHost, TestSettings.RedisPort, -1, TestSettings.RedisPassword))
-                {
-                    conn.Open();
-                    var childrenKey = CacheManager.Settings.AddPrefix("key1.children");
-                    var result = conn.Lists.RangeString(_cacheSleeve.RedisDb, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
-                    Assert.Contains(TestSettings.KeyPrefix + "key2", result);
-                }
+                var conn = _cacheSleeve.GetDatebase();
+                var childrenKey = CacheManager.Settings.AddPrefix("key1.children");
+                var result = conn.ListRange(childrenKey, 0, (int)conn.ListLength(childrenKey));
+                Assert.Contains(TestSettings.KeyPrefix + "key2", result.Select(x => x.ToString()));
             }
 
             [Fact]
@@ -214,16 +210,13 @@ namespace CacheSleeve.Tests
             {
                 _redisCacher.Set("key1", "value1");
                 _redisCacher.Set("key2", "value2", "key1");
-                using (var conn = new RedisConnection(TestSettings.RedisHost, TestSettings.RedisPort, -1, TestSettings.RedisPassword))
-                {
-                    conn.Open();
-                    var childrenKey = CacheManager.Settings.AddPrefix("key1.children");
-                    var result = conn.Lists.RangeString(_cacheSleeve.RedisDb, childrenKey, 0, (int)conn.Lists.GetLength(_cacheSleeve.RedisDb, childrenKey).Result).Result;
-                    Assert.Contains(TestSettings.KeyPrefix + "key2", result);
-                    _redisCacher.Set("key1", "value3");
-                    result = conn.Lists.RangeString(_cacheSleeve.RedisDb, childrenKey, 0, (int)conn.Lists.GetLength(_cacheSleeve.RedisDb, childrenKey).Result).Result;
-                    Assert.Equal(0, result.Length);
-                }
+                var conn = _cacheSleeve.GetDatebase();
+                var childrenKey = CacheManager.Settings.AddPrefix("key1.children");
+                var result = conn.ListRange(childrenKey, 0, (int)conn.ListLength(childrenKey));
+                Assert.Contains(TestSettings.KeyPrefix + "key2", result.Select(x => x.ToString()));
+                _redisCacher.Set("key1", "value3");
+                result = conn.ListRange(childrenKey, 0, (int)conn.ListLength(childrenKey));
+                Assert.Equal(0, result.Length);
             }
 
             [Fact]
@@ -243,16 +236,13 @@ namespace CacheSleeve.Tests
             {
                 _redisCacher.Set("key1", "value1");
                 _redisCacher.Set("key2", "value2", "key1");
-                using (var conn = new RedisConnection(TestSettings.RedisHost, TestSettings.RedisPort, -1, TestSettings.RedisPassword))
-                {
-                    conn.Open();
-                    var childrenKey = CacheManager.Settings.AddPrefix("key1.children");
-                    var result = conn.Lists.RangeString(_cacheSleeve.RedisDb, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
-                    Assert.Contains(TestSettings.KeyPrefix + "key2", result);
-                    _redisCacher.Remove("key1");
-                    result = conn.Lists.RangeString(_cacheSleeve.RedisDb, childrenKey, 0, (int)conn.Lists.GetLength(0, childrenKey).Result).Result;
-                    Assert.Equal(0, result.Length);
-                }
+                var conn = _cacheSleeve.GetDatebase();
+                var childrenKey = CacheManager.Settings.AddPrefix("key1.children");
+                var result = conn.ListRange(childrenKey, 0, (int)conn.ListLength(childrenKey));
+                Assert.Contains(TestSettings.KeyPrefix + "key2", result.Select(x => x.ToString()));
+                _redisCacher.Remove("key1");
+                result = conn.ListRange(childrenKey, 0, (int)conn.ListLength(childrenKey));
+                Assert.Equal(0, result.Length);
             }
 
             [Fact]
