@@ -4,11 +4,11 @@ CacheSleeve - Distributed In-Memory Caching for .NET
 
 Overview
 --------
-CacheSleeve lets you easily add distributed in-memory caching to your ASP.NET projects.
+CacheSleeve lets you easily add 2-tier distributed in-memory caching to your ASP.NET projects.
 
 Using CacheSleeves HybridCacher you can simply add items to the cache and they will automatically be synced across all servers in your farm using a combination of Redis and in-memory caching.
 
-Uses Marc Gravell's [BookSleeve](https://code.google.com/p/booksleeve/) for interacting with Redis.
+Uses [StackExchange.Redis](https://github.com/StackExchange/StackExchange.Redis) for interacting with Redis.
 
 Features
 --------
@@ -39,6 +39,11 @@ Set parent/child relationships for cache items. Removing a parent item will inva
 ### Cache Expiration
 
 Set a time span that cache items should live for. When the item expires it will be invalidated across all connected servers.
+
+
+### Async Support
+
+All caching methods now have Async equivalents.
 
 
 Setup
