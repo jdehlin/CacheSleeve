@@ -4,6 +4,8 @@ using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Web;
 using CacheSleeve.Models;
 using CacheSleeve.Utilities;
 using RazorEngine;
@@ -41,6 +43,37 @@ namespace CacheSleeve
 
         public static void Init(string redisHost, int redisPort = 6379, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.")
         {
+            PopulateSettings(redisHost, redisPort, redisPassword, redisDb, keyPrefix);
+
+            var configuration =
+                ConfigurationOptions.Parse(string.Format("{0}:{1}", Settings.RedisHost, Settings.RedisPort));
+            configuration.AllowAdmin = true;
+            Settings._redisConnection = ConnectionMultiplexer.Connect(configuration);
+
+            // Setup pub/sub for cache syncing
+            var subscriber = Settings._redisConnection.GetSubscriber();
+            subscriber.Subscribe("cacheSleeve.remove.*", (redisChannel, value) => Settings.LocalCacher.Remove(GetString(value)));
+            subscriber.Subscribe("cacheSleeve.flush*", (redisChannel, value) => Settings.LocalCacher.FlushAll());
+        }
+
+        public async static Task InitAsync(string redisHost, int redisPort = 6379, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.")
+        {
+            PopulateSettings(redisHost, redisPort, redisPassword, redisDb, keyPrefix);
+
+            var configuration =
+                ConfigurationOptions.Parse(string.Format("{0}:{1}", Settings.RedisHost, Settings.RedisPort));
+            configuration.AllowAdmin = true;
+            Settings._redisConnection = await ConnectionMultiplexer.ConnectAsync(configuration);
+
+            // Setup pub/sub for cache syncing
+            var subscriber = Settings._redisConnection.GetSubscriber();
+            var removeSubscription = subscriber.SubscribeAsync("cacheSleeve.remove.*", (redisChannel, value) => Settings.LocalCacher.Remove(GetString(value)));
+            var flushSubscription = subscriber.SubscribeAsync("cacheSleeve.flush*", (redisChannel, value) => Settings.LocalCacher.FlushAll());
+            Task.WaitAll(removeSubscription, flushSubscription);
+        }
+
+        private static void PopulateSettings(string redisHost, int redisPort = 6379, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.")
+        {
             if (Settings._setup)
                 if (!UnitTestDetector.IsRunningFromXunit) throw new InvalidOperationException("Cannot reinitialize CacheSleeve");
             Settings._setup = true;
@@ -53,16 +86,6 @@ namespace CacheSleeve
 
             Settings.RemoteCacher = new RedisCacher();
             Settings.LocalCacher = new HttpContextCacher();
-
-            var configuration =
-                ConfigurationOptions.Parse(string.Format("{0}:{1}", Settings.RedisHost, Settings.RedisPort));
-            configuration.AllowAdmin = true;
-            Settings._redisConnection = ConnectionMultiplexer.Connect(configuration);
-
-            // Setup pub/sub for cache syncing
-            var subscriber = Settings._redisConnection.GetSubscriber();
-            subscriber.Subscribe("cacheSleeve.remove.*", (redisChannel, value) => Settings.LocalCacher.Remove(GetString(value)));
-            subscriber.Subscribe("cacheSleeve.flush*", (redisChannel, value) => Settings.LocalCacher.FlushAll());
         }
 
         public string GenerateOverview()
@@ -127,13 +150,13 @@ namespace CacheSleeve
         {
             return _redisConnection.GetDatabase(RedisDb);
         }
-
+        
         public IEnumerable<RedisKey> GetAllKeys()
         {
             var server = _redisConnection.GetServer(string.Format("{0}:{1}", Settings.RedisHost, Settings.RedisPort));
             var keys = server.Keys(database: Settings.RedisDb, pattern: Settings.AddPrefix("*"));
             return keys;
-        } 
+        }
 
         /// <summary>
         /// Adds the prefix to the key.

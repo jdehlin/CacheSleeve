@@ -50,8 +50,10 @@
   <ItemGroup>
     <Compile Include="CacheManagerTests.cs" />
     <Compile Include="HttpContextCacherTests.cs" />
+    <Compile Include="HybridCacherAsyncTests.cs" />
     <Compile Include="HybridCacherTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RedisCacherAsyncTests.cs" />
     <Compile Include="RedisCacherTests.cs" />
     <Compile Include="TestObjects\Banana.cs" />
     <Compile Include="TestObjects\Fruit.cs" />

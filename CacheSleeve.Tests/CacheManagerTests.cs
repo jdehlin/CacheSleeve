@@ -36,8 +36,8 @@ namespace CacheSleeve.Tests
             var redisConnection = ConnectionMultiplexer.Connect(configuration);
             
             var subscriber = redisConnection.GetSubscriber();
-            subscriber.Subscribe("cacheSleeve.remove.*", (redisChannel, value) => _cacheSleeve.LocalCacher.Remove(GetString(value)));
-            subscriber.Subscribe("cacheSleeve.flush*", (redisChannel, value) => _cacheSleeve.LocalCacher.FlushAll());
+            subscriber.Subscribe("cacheSleeve.remove.*", (redisChannel, value) => OnSubscriptionHit(redisChannel, GetString(value)));
+            subscriber.Subscribe("cacheSleeve.flush*", (redisChannel, value) => OnSubscriptionHit(redisChannel, "flush"));
 
             _hybridCacher = new HybridCacher();
             _remoteCacher = _cacheSleeve.RemoteCacher;
