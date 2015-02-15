@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>CacheSleeve</id>
-    <version>1.3.10</version>
+    <version>1.4.0</version>
     <title>CacheSleeve</title>
     <authors>Jack Dehlin</authors>
     <owners>Jack Dehlin</owners>
@@ -13,15 +13,15 @@
       CacheSleeve lets you easily set up distributed in-memory cache with a Redis backplane for .NET projects.
     </description>
     <summary>
-	  
+	    
     </summary>
     <releaseNotes>
-      Handle polymorphic types when serializing/deserializing.
+      Switched to StackExchange.Redis and added Async support.
     </releaseNotes>
-    <copyright>Copyright Jack Dehlin 2013</copyright>
+    <copyright>Copyright Jack Dehlin 2015</copyright>
     <tags>Redis Cache Caching Distributed</tags>
     <dependencies>
-      <dependency id="BookSleeve" />
+      <dependency id="StackExchange.Redis" />
       <dependency id="Newtonsoft.Json" />
     </dependencies>
   </metadata>
