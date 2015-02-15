@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>CacheSleeve</id>
-    <version>1.4.0</version>
+    <version>1.4.1</version>
     <title>CacheSleeve</title>
     <authors>Jack Dehlin</authors>
     <owners>Jack Dehlin</owners>
@@ -16,7 +16,7 @@
 	    
     </summary>
     <releaseNotes>
-      Switched to StackExchange.Redis and added Async support.
+      Added a NET40 build.
     </releaseNotes>
     <copyright>Copyright Jack Dehlin 2015</copyright>
     <tags>Redis Cache Caching Distributed</tags>
@@ -26,7 +26,10 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="bin\Release\CacheSleeve.dll" target="lib\net40" />
-    <file src="bin\Release\CacheSleeve.pdb" target="lib\net40" />
+    <file src="CacheSleeve.NET40\bin\Release\CacheSleeve.dll" target="lib\net40" />
+    <file src="CacheSleeve.NET40\bin\Release\CacheSleeve.pdb" target="lib\net40" />
+
+    <file src="CacheSleeve\bin\Release\CacheSleeve.dll" target="lib\net45" />
+    <file src="CacheSleeve\bin\Release\CacheSleeve.pdb" target="lib\net45" />
   </files>
 </package>
