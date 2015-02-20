@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>CacheSleeve</id>
-    <version>1.4.1</version>
+    <version>1.4.4</version>
     <title>CacheSleeve</title>
     <authors>Jack Dehlin</authors>
     <owners>Jack Dehlin</owners>
@@ -21,8 +21,8 @@
     <copyright>Copyright Jack Dehlin 2015</copyright>
     <tags>Redis Cache Caching Distributed</tags>
     <dependencies>
-      <dependency id="StackExchange.Redis" />
-      <dependency id="Newtonsoft.Json" />
+      <dependency id="StackExchange.Redis" version="1.0.394" />
+      <dependency id="Newtonsoft.Json" version="5.0.8" />
     </dependencies>
   </metadata>
   <files>
