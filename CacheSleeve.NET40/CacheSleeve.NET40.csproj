@@ -7,8 +7,8 @@
     <ProjectGuid>{FEA590F2-506A-4E20-ABD0-C2C3804C4C1D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CacheSleeve.NET40</RootNamespace>
-    <AssemblyName>CacheSleeve.NET40</AssemblyName>
+    <RootNamespace>CacheSleeve</RootNamespace>
+    <AssemblyName>CacheSleeve</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
@@ -32,6 +32,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="RazorEngine">
       <HintPath>..\packages\RazorEngine.3.6.0\lib\net45\RazorEngine.dll</HintPath>
     </Reference>
@@ -40,6 +43,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Web.Razor, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.AspNet.Razor.3.2.3\lib\net45\System.Web.Razor.dll</HintPath>
@@ -54,7 +58,6 @@
     <Compile Include="CacheManager.cs" />
     <Compile Include="HttpContextCacher.cs" />
     <Compile Include="HybridCacher.cs" />
-    <Compile Include="IAsyncCacher.cs" />
     <Compile Include="ICacher.cs" />
     <Compile Include="Models\Key.cs" />
     <Compile Include="Models\Overview.cs" />

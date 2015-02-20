@@ -14,7 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{A88BEF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CacheSleeve.Tests", "CacheSleeve.Tests\CacheSleeve.Tests.csproj", "{7AD4782D-8830-46F2-877C-F2A9BBD3FCAB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CacheSleeve.NET40", "CacheSleeve.NET40\CacheSleeve.NET40.csproj", "{14E983AB-9ADE-4DB1-9A07-A47EC8AF4F3E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CacheSleeve.NET40", "CacheSleeve.NET40\CacheSleeve.NET40.csproj", "{FEA590F2-506A-4E20-ABD0-C2C3804C4C1D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,10 +30,10 @@ Global
 		{7AD4782D-8830-46F2-877C-F2A9BBD3FCAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7AD4782D-8830-46F2-877C-F2A9BBD3FCAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7AD4782D-8830-46F2-877C-F2A9BBD3FCAB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{14E983AB-9ADE-4DB1-9A07-A47EC8AF4F3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{14E983AB-9ADE-4DB1-9A07-A47EC8AF4F3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{14E983AB-9ADE-4DB1-9A07-A47EC8AF4F3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{14E983AB-9ADE-4DB1-9A07-A47EC8AF4F3E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FEA590F2-506A-4E20-ABD0-C2C3804C4C1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FEA590F2-506A-4E20-ABD0-C2C3804C4C1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FEA590F2-506A-4E20-ABD0-C2C3804C4C1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FEA590F2-506A-4E20-ABD0-C2C3804C4C1D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

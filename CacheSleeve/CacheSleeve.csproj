@@ -58,9 +58,40 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\CacheSleeve.NET40\CacheManager.cs">
+      <Link>CacheManager.cs</Link>
+    </Compile>
+    <Compile Include="..\CacheSleeve.NET40\HttpContextCacher.cs">
+      <Link>HttpContextCacher.cs</Link>
+    </Compile>
+    <Compile Include="..\CacheSleeve.NET40\HybridCacher.cs">
+      <Link>HybridCacher.cs</Link>
+    </Compile>
+    <Compile Include="..\CacheSleeve.NET40\ICacher.cs">
+      <Link>ICacher.cs</Link>
+    </Compile>
+    <Compile Include="..\CacheSleeve.NET40\Models\Key.cs">
+      <Link>Models\Key.cs</Link>
+    </Compile>
+    <Compile Include="..\CacheSleeve.NET40\Models\Overview.cs">
+      <Link>Models\Overview.cs</Link>
+    </Compile>
+    <Compile Include="..\CacheSleeve.NET40\RedisCacher.cs">
+      <Link>RedisCacher.cs</Link>
+    </Compile>
+    <Compile Include="..\CacheSleeve.NET40\Utilities\UnitTestDetector.cs">
+      <Link>Utilities\UnitTestDetector.cs</Link>
+    </Compile>
+    <Compile Include="CacheManagerAsync.cs" />
+    <Compile Include="HybridCacherAsync.cs" />
+    <Compile Include="IAsyncCacher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RedisCacherAsync.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\CacheSleeve.NET40\Razor\Overview.cshtml">
+      <Link>Razor\Overview.cshtml</Link>
+    </None>
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
