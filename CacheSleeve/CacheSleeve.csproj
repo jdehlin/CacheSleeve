@@ -89,9 +89,10 @@
     <Compile Include="RedisCacherAsync.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\CacheSleeve.NET40\Razor\Overview.cshtml">
+    <EmbeddedResource Include="..\CacheSleeve.NET40\Razor\Overview.cshtml">
       <Link>Razor\Overview.cshtml</Link>
-    </None>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>

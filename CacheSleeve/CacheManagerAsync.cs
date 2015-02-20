@@ -1,16 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Web;
-using CacheSleeve.Models;
-using CacheSleeve.Utilities;
-using RazorEngine;
+﻿using System.Threading.Tasks;
 using StackExchange.Redis;
-using Encoding = System.Text.Encoding;
 
 namespace CacheSleeve
 {
