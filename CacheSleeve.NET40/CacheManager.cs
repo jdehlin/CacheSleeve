@@ -48,6 +48,8 @@ namespace CacheSleeve
             var configuration =
                 ConfigurationOptions.Parse(string.Format("{0}:{1}", Settings.RedisHost, Settings.RedisPort));
             configuration.AllowAdmin = true;
+            configuration.Password = redisPassword;
+            configuration.AbortOnConnectFail = false;
             Settings._redisConnection = ConnectionMultiplexer.Connect(configuration);
 
             // Setup pub/sub for cache syncing

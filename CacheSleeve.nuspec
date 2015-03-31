@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>CacheSleeve</id>
-    <version>1.4.4</version>
+    <version>1.4.7</version>
     <title>CacheSleeve</title>
     <authors>Jack Dehlin</authors>
     <owners>Jack Dehlin</owners>
@@ -23,6 +23,7 @@
     <dependencies>
       <dependency id="StackExchange.Redis" version="1.0.394" />
       <dependency id="Newtonsoft.Json" version="5.0.8" />
+      <dependency id="RazorEngine" version="3.6.0" />
     </dependencies>
   </metadata>
   <files>
