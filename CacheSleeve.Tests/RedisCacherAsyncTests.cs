@@ -72,7 +72,7 @@ namespace CacheSleeve.Tests
                 var georgeJr = new Monkey("George Jr.");
                 var task1 = _redisCacher.SetAsync("key", george);
                 var task2 = _redisCacher.SetAsync("key", georgeJr);
-                Task.WaitAll(task1, task2);
+                await Task.WhenAll(task1, task2);
                 var result = await _redisCacher.GetAsync<Monkey>("key");
                 Assert.Equal(georgeJr.Name, result.Name);
             }

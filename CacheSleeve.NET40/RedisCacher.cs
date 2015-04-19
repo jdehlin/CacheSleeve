@@ -5,17 +5,24 @@ using System.Linq;
 using System.Threading.Tasks;
 using CacheSleeve.Models;
 using Newtonsoft.Json;
+using StackExchange.Redis;
 
 namespace CacheSleeve
 {
     public partial class RedisCacher : ICacher
     {
         private readonly CacheManager _cacheSleeve;
+        private readonly JsonSerializerSettings _jsonSettings;
 
         public RedisCacher()
         {
             _cacheSleeve = CacheManager.Settings;
             _cacheSleeve.Debug = true;
+
+             _jsonSettings = new JsonSerializerSettings
+             {
+                 TypeNameHandling = TypeNameHandling.Objects
+             };
         }
 
 
@@ -40,7 +47,7 @@ namespace CacheSleeve
                 return (T)(object)result;
             try
             {
-                return JsonConvert.DeserializeObject<T>(result, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects });
+                return JsonConvert.DeserializeObject<T>(result, _jsonSettings);
             }
             catch (JsonReaderException)
             {
@@ -157,20 +164,26 @@ namespace CacheSleeve
         /// <param name="key">The key of the item to insert.</param>
         /// <param name="value">The value of the item to insert.</param>
         /// <param name="parentKey">The key of the item that this item is a child of.</param>
-        /// <returns></returns>
         private bool InternalSet<T>(string key, T value, string parentKey = null)
         {
             var conn = _cacheSleeve.GetDatebase();
-            var bytesValue = value as byte[];
             try
             {
-                if (bytesValue != null)
-                    conn.StringSet(_cacheSleeve.AddPrefix(key), bytesValue);
+                if (typeof(T) == typeof(byte[]))
+                {
+                    var bytesValue = value as byte[];
+                    if (bytesValue != null)
+                        conn.StringSet(_cacheSleeve.AddPrefix(key), bytesValue);
+                }
                 else if (typeof(T) == typeof(string))
-                    conn.StringSet(_cacheSleeve.AddPrefix(key), value as string);
+                {
+                    var stringValue = value as string;
+                    if (stringValue != null)
+                        conn.StringSet(_cacheSleeve.AddPrefix(key), value as string);
+                }
                 else
                 {
-                    var valueString = JsonConvert.SerializeObject(value, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects });
+                    var valueString = JsonConvert.SerializeObject(value, this._jsonSettings);
                     conn.StringSet(_cacheSleeve.AddPrefix(key), valueString);
                 }
                 if (_cacheSleeve.Debug)
@@ -182,7 +195,7 @@ namespace CacheSleeve
             }
             return true;
         }
-        
+
         /// <summary>
         /// Adds a child key as a dependency of a parent key.
         /// When the parent is invalidated by remove, overwrite, or expiration the child will be removed.
@@ -195,19 +208,22 @@ namespace CacheSleeve
                 return;
 
             var conn = _cacheSleeve.GetDatebase();
-            conn.ListRightPush(parentKey + ".children", childKey);
-            conn.StringSet(childKey + ".parent", parentKey);
+            var parentDepKey = parentKey + ".children";
+            var childDepKey = childKey + ".parent";
+
+            conn.ListRightPush(parentDepKey, childKey);
+            conn.StringSet(childDepKey, parentKey);
             var ttl = conn.KeyTimeToLive(parentKey);
             if (ttl != null && ttl.Value.TotalSeconds > -1)
             {
-                var children = conn.ListRange(parentKey + ".children", 0, (int)conn.ListLength(parentKey + ".children")).ToList();
-                conn.KeyExpire(parentKey + ".children", ttl);
-                conn.KeyExpire(childKey + ".parent", ttl);
+                var children = conn.ListRange(parentDepKey, 0, -1).ToList();
+                conn.KeyExpire(parentDepKey, ttl);
+                conn.KeyExpire(childDepKey, ttl);
                 foreach (var child in children)
                     conn.KeyExpire(child.ToString(), ttl);
             }
         }
-
+        
         /// <summary>
         /// Removes all of the dependencies of the key from the cache.
         /// </summary>
@@ -218,13 +234,19 @@ namespace CacheSleeve
                 return;
 
             var conn = _cacheSleeve.GetDatebase();
-            var children = conn.ListRange(key + ".children", 0, (int)conn.ListLength(key + ".children")).ToList();
-            foreach (var child in children)
+            var depKey = key + ".children";
+            var children = conn.ListRange(depKey, 0, -1).ToList();
+            if (children.Count > 0)
             {
-                conn.KeyDelete(child.ToString());
-                conn.KeyDelete(child + ".parent");
+                var keys = new List<RedisKey>(children.Count * 2 + 1);
+                keys.Add(depKey);
+                foreach (var child in children)
+                {
+                    keys.Add(child.ToString());
+                    keys.Add(child + ".parent");
+                }
+                conn.KeyDelete(keys.ToArray());
             }
-            conn.KeyDelete(key + ".children");
         }
     }
 }
