@@ -24,12 +24,9 @@ namespace CacheSleeve
         public T Get<T>(string key)
         {
             var cacheEntry = (CacheEntry)_cache.Get(_cacheSleeve.AddPrefix(key));
-            if (cacheEntry == null || cacheEntry.Value.GetType() != typeof (T))
-            {
-                Remove(key);
-                return default(T);   
-            }
-            return (T)cacheEntry.Value;
+            if (cacheEntry != null)
+                return (T)cacheEntry.Value;
+            return default(T);
         }
 
         public bool Set<T>(string key, T value, string parentKey = null)

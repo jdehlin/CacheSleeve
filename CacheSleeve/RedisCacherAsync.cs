@@ -14,11 +14,10 @@ namespace CacheSleeve
         public async Task<T> GetAsync<T>(string key)
         {
             var conn = _cacheSleeve.GetDatebase();
-            if (typeof(T) == typeof(byte[]))
-            {
-                object byteResult = await conn.StringGetAsync(_cacheSleeve.AddPrefix(key));
-                return (T)byteResult;
-            }
+
+            var redisKey = _cacheSleeve.AddPrefix(key);
+            if (typeof(T) == typeof(string) || typeof(T) == typeof(byte[]))
+                return (T)(dynamic)(await conn.StringGetAsync(redisKey));
             string result;
             try
             {
@@ -28,52 +27,37 @@ namespace CacheSleeve
             {
                 return default(T);
             }
-            if (result == null || typeof(T) == typeof(string))
-                return (T)(object)result;
-            try
-            {
-                return JsonConvert.DeserializeObject<T>(result, _jsonSettings);
-            }
-            catch (JsonReaderException)
-            {
-                Remove(key);
-                return default(T);
-            }
+            if (result != null)
+                return _objectSerializer.DeserializeObject<T>(result);
+            return default(T);
         }
 
         public async Task<bool> SetAsync<T>(string key, T value, string parentKey = null)
         {
-            if (await InternalSetAsync(key, value, parentKey))
+            var redisKey = _cacheSleeve.AddPrefix(key);
+            if (await InternalSetAsync(redisKey, value))
             {
-                await RemoveDependenciesAsync(_cacheSleeve.AddPrefix(key));
-                await SetDependenciesAsync(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
+                await RemoveDependenciesAsync(redisKey);
+                await SetDependenciesAsync(redisKey, _cacheSleeve.AddPrefix(parentKey));
             }
             return true;
         }
 
-        public async Task<bool> SetAsync<T>(string key, T value, DateTime expiresAt, string parentKey = null)
+        public Task<bool> SetAsync<T>(string key, T value, DateTime expiresAt, string parentKey = null)
         {
-            var result = false;
-            if (await InternalSetAsync(key, value))
-            {
-                var conn = _cacheSleeve.GetDatebase();
-                var timeSpan = (expiresAt - DateTime.Now);
-                result = await conn.KeyExpireAsync(_cacheSleeve.AddPrefix(key), timeSpan);
-                await RemoveDependenciesAsync(_cacheSleeve.AddPrefix(key));
-                await SetDependenciesAsync(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
-            }
-            return result;
+            return SetAsync(key, value, expiresAt - DateTime.Now, parentKey);
         }
 
         public async Task<bool> SetAsync<T>(string key, T value, TimeSpan expiresIn, string parentKey = null)
         {
-            var result = false;
-            if (await InternalSetAsync(key, value))
+            var redisKey = _cacheSleeve.AddPrefix(key);
+            var result = await InternalSetAsync(redisKey, value);
+            if (result)
             {
                 var conn = _cacheSleeve.GetDatebase();
-                result = await conn.KeyExpireAsync(_cacheSleeve.AddPrefix(key), expiresIn);
-                await RemoveDependenciesAsync(_cacheSleeve.AddPrefix(key));
-                await SetDependenciesAsync(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
+                result = await conn.KeyExpireAsync(redisKey, expiresIn);
+                await RemoveDependenciesAsync(redisKey);
+                await SetDependenciesAsync(redisKey, _cacheSleeve.AddPrefix(parentKey));
             }
             return result;
         }
@@ -81,10 +65,11 @@ namespace CacheSleeve
         public async Task<bool> RemoveAsync(string key)
         {
             var conn = _cacheSleeve.GetDatebase();
-            if (await conn.KeyDeleteAsync(_cacheSleeve.AddPrefix(key)))
+            var redisKey = _cacheSleeve.AddPrefix(key);
+            if (await conn.KeyDeleteAsync(redisKey))
             {
-                await RemoveDependenciesAsync(_cacheSleeve.AddPrefix(key));
-                await conn.KeyDeleteAsync(_cacheSleeve.AddPrefix(key + ".parent"));
+                await RemoveDependenciesAsync(redisKey);
+                await conn.KeyDeleteAsync(redisKey + ".parent");
                 if (_cacheSleeve.Debug)
                     Trace.WriteLine(string.Format("CS Redis: Removed cache item with key {0}", key));
                 return true;
@@ -95,10 +80,7 @@ namespace CacheSleeve
         public async Task FlushAllAsync()
         {
             var keys = _cacheSleeve.GetAllKeys();
-            var tasks = new List<Task>();
-            foreach (var key in keys)
-                tasks.Add(RemoveAsync(_cacheSleeve.StripPrefix(key)));
-            await Task.WhenAll(tasks.ToArray());
+            await _cacheSleeve.GetDatebase().KeyDeleteAsync(keys.ToString());
         }
 
         public async Task<IEnumerable<Key>> GetAllKeysAsync()
@@ -110,13 +92,11 @@ namespace CacheSleeve
             foreach (var keyString in keyStrings)
                 tasks.Add(keyString, conn.KeyTimeToLiveAsync(keyString));
             await Task.WhenAll(tasks.Values.ToArray());
-            foreach (var keyString in keyStrings)
+            foreach (var taskResult in tasks)
             {
-                var ttl = tasks[keyString].Result;
-                var expiration = default(DateTime?);
-                if (ttl != null)
-                    expiration = DateTime.Now.AddSeconds(ttl.Value.TotalSeconds);
-                keys.Add(new Key(keyString, expiration));
+                var key = taskResult.Key;
+                var ttl = taskResult.Value.Result;
+                keys.Add(new Key(key, ttl != null ? DateTime.Now.AddSeconds(ttl.Value.TotalSeconds) : (DateTime?)null));
             }
             return keys;
         }
@@ -154,28 +134,24 @@ namespace CacheSleeve
         /// <typeparam name="T">The type of the item to insert.</typeparam>
         /// <param name="key">The key of the item to insert.</param>
         /// <param name="value">The value of the item to insert.</param>
-        /// <param name="parentKey">The key of the item that this item is a child of.</param>
-        private async Task<bool> InternalSetAsync<T>(string key, T value, string parentKey = null)
+        /// <returns></returns>
+        private async Task<bool> InternalSetAsync<T>(string key, T value)
         {
             var conn = _cacheSleeve.GetDatebase();
             try
             {
                 if (typeof(T) == typeof(byte[]))
                 {
-                    var bytesValue = value as byte[];
-                    if (bytesValue != null)
-                        await conn.StringSetAsync(_cacheSleeve.AddPrefix(key), bytesValue);
+                    await conn.StringSetAsync(key, value as byte[]);
                 }
                 else if (typeof(T) == typeof(string))
                 {
-                    var stringValue = value as string;
-                    if (stringValue != null)
-                        await conn.StringSetAsync(_cacheSleeve.AddPrefix(key), stringValue);
+                    await conn.StringSetAsync(key, value as string);
                 }
                 else
                 {
-                    var valueString = JsonConvert.SerializeObject(value, this._jsonSettings);
-                    await conn.StringSetAsync(_cacheSleeve.AddPrefix(key), valueString);
+                    var serializedValue = _objectSerializer.SerializeObject<T>(value);
+                    await conn.StringSetAsync(key, serializedValue);
                 }
                 if (_cacheSleeve.Debug)
                     Trace.WriteLine(string.Format("CS Redis: Set cache item with key {0}", key));
@@ -195,7 +171,7 @@ namespace CacheSleeve
         /// <param name="parentKey">The key of the parent item.</param>
         private async Task SetDependenciesAsync(string childKey, string parentKey)
         {
-            if (string.IsNullOrWhiteSpace(_cacheSleeve.StripPrefix(childKey)) || string.IsNullOrWhiteSpace(_cacheSleeve.StripPrefix(parentKey)))
+            if (childKey.Length <= _cacheSleeve.KeyPrefix.Length || parentKey.Length <= _cacheSleeve.KeyPrefix.Length)
                 return;
 
             var conn = _cacheSleeve.GetDatebase();
@@ -224,7 +200,7 @@ namespace CacheSleeve
         /// <param name="key">The key of the item to remove children for.</param>
         private async Task RemoveDependenciesAsync(string key)
         {
-            if (string.IsNullOrWhiteSpace(_cacheSleeve.StripPrefix(key)))
+            if (key.Length <= _cacheSleeve.KeyPrefix.Length)
                 return;
 
             var conn = _cacheSleeve.GetDatebase();

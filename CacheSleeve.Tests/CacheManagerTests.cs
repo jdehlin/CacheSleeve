@@ -31,7 +31,7 @@ namespace CacheSleeve.Tests
             _cacheSleeve = CacheManager.Settings;
 
             var configuration =
-                ConfigurationOptions.Parse(string.Format("{0}:{1}", _cacheSleeve.RedisHost, _cacheSleeve.RedisPort));
+                ConfigurationOptions.Parse(string.Format("{0}:{1}", TestSettings.RedisHost, TestSettings.RedisPort));
             configuration.AllowAdmin = true;
             var redisConnection = ConnectionMultiplexer.Connect(configuration);
             

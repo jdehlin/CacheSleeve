@@ -19,7 +19,7 @@ namespace CacheSleeve
             _localCacher = _cacheSleeve.LocalCacher;
         }
 
-
+        
         public T Get<T>(string key)
         {
             var result = _localCacher.Get<T>(key);
@@ -28,15 +28,29 @@ namespace CacheSleeve
             result = _remoteCacher.Get<T>(key);
             if (result != null)
             {
-                var ttl = (int) _remoteCacher.TimeToLive(key);
+                var ttl = _remoteCacher.TimeToLive(key);
                 var parentKey = _remoteCacher.Get<string>(key + ".parent");
+                if (parentKey != null)
+                    parentKey = parentKey.Substring(_cacheSleeve.KeyPrefix.Length);
                 if (ttl > -1)
-                    _localCacher.Set(key, result, TimeSpan.FromSeconds(ttl), _cacheSleeve.StripPrefix(parentKey));
+                    _localCacher.Set(key, result, TimeSpan.FromSeconds(ttl), parentKey);
                 else
-                    _localCacher.Set(key, result, _cacheSleeve.StripPrefix(parentKey));
+                    _localCacher.Set(key, result, parentKey);
                 result = _localCacher.Get<T>(key);
             }
             return result;
+        }
+
+        public T GetOrSet<T>(string key, Func<string, T> valueFactory, DateTime expiresAt, string parentKey = null)
+        {
+            var value = Get<T>(key);
+            if (value == null)
+            {
+                value = valueFactory(key);
+                if (value != null && !value.Equals(default(T)))
+                    Set(key, value, expiresAt, parentKey);
+            }
+            return value;
         }
 
         public bool Set<T>(string key, T value, string parentKey = null)

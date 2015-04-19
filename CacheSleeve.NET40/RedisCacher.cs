@@ -11,84 +11,73 @@ namespace CacheSleeve
 {
     public partial class RedisCacher : ICacher
     {
-        private readonly CacheManager _cacheSleeve;
-        private readonly JsonSerializerSettings _jsonSettings;
+        private readonly ICacheManager _cacheSleeve;
+        private readonly IObjectSerializer _objectSerializer;
 
         public RedisCacher()
         {
             _cacheSleeve = CacheManager.Settings;
             _cacheSleeve.Debug = true;
 
-             _jsonSettings = new JsonSerializerSettings
-             {
-                 TypeNameHandling = TypeNameHandling.Objects
-             };
+            _objectSerializer = new JsonObjectSerializer();
+        }
+
+        public RedisCacher(
+            ICacheManager cacheManger,
+            IObjectSerializer serializer)
+        {
+            _cacheSleeve = cacheManger;
+            _objectSerializer = serializer;
         }
 
 
         public T Get<T>(string key)
         {
             var conn = _cacheSleeve.GetDatebase();
-            if (typeof (T) == typeof (byte[]))
-            {
-                dynamic byteResult = conn.StringGet(_cacheSleeve.AddPrefix(key));
-                return (T)byteResult;
-            }
+            var redisKey = _cacheSleeve.AddPrefix(key);
+            if (typeof(T) == typeof(string) || typeof(T) == typeof(byte[]))
+                return (T)(dynamic)conn.StringGet(redisKey);
             string result;
             try
             {
-                result = conn.StringGet(_cacheSleeve.AddPrefix(key));
+                result = conn.StringGet(redisKey);
             }
             catch (Exception)
             {
                 return default(T);
             }
-            if (result == null || typeof(T) == typeof(string))
-                return (T)(object)result;
-            try
-            {
-                return JsonConvert.DeserializeObject<T>(result, _jsonSettings);
-            }
-            catch (JsonReaderException)
-            {
-                Remove(key);
-                return default(T);
-            }
+            if (result != null)
+                return _objectSerializer.DeserializeObject<T>(result);
+            return default(T);
         }
-
+        
         public bool Set<T>(string key, T value, string parentKey = null)
         {
-            if (InternalSet(key, value, parentKey))
+            var redisKey = _cacheSleeve.AddPrefix(key);
+            if (InternalSet(redisKey, value))
             {
-                RemoveDependencies(_cacheSleeve.AddPrefix(key));
-                SetDependencies(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
+                RemoveDependencies(redisKey);
+                SetDependencies(redisKey, _cacheSleeve.AddPrefix(parentKey));
             }
             return true;
         }
 
         public bool Set<T>(string key, T value, DateTime expiresAt, string parentKey = null)
         {
-            var result = false;
-            if (InternalSet(key, value))
-            {
-                var conn = _cacheSleeve.GetDatebase();
-                var timeSpan = (expiresAt - DateTime.Now);
-                result = conn.KeyExpire(_cacheSleeve.AddPrefix(key), timeSpan);
-                RemoveDependencies(_cacheSleeve.AddPrefix(key));
-                SetDependencies(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
-            }
-            return result;
+            return Set(key, value, expiresAt - DateTime.Now, parentKey);
         }
-
+        
         public bool Set<T>(string key, T value, TimeSpan expiresIn, string parentKey = null)
         {
-            var result = false;
-            if (InternalSet(key, value))
+
+            var redisKey = _cacheSleeve.AddPrefix(key);
+            var result = InternalSet(redisKey, value);
+            if (result)
             {
                 var conn = _cacheSleeve.GetDatebase();
-                result = conn.KeyExpire(_cacheSleeve.AddPrefix(key), expiresIn);
-                RemoveDependencies(_cacheSleeve.AddPrefix(key));
-                SetDependencies(_cacheSleeve.AddPrefix(key), _cacheSleeve.AddPrefix(parentKey));
+                result = conn.KeyExpire(redisKey, expiresIn);
+                RemoveDependencies(redisKey);
+                SetDependencies(redisKey, _cacheSleeve.AddPrefix(parentKey));
             }
             return result;
         }
@@ -96,10 +85,11 @@ namespace CacheSleeve
         public bool Remove(string key)
         {
             var conn = _cacheSleeve.GetDatebase();
-            if (conn.KeyDelete(_cacheSleeve.AddPrefix(key)))
+            var redisKey = _cacheSleeve.AddPrefix(key);
+            if (conn.KeyDelete(redisKey))
             {
-                RemoveDependencies(_cacheSleeve.AddPrefix(key));
-                conn.KeyDelete(_cacheSleeve.AddPrefix(key + ".parent"));
+                RemoveDependencies(redisKey);
+                conn.KeyDelete(redisKey + ".parent");
                 if (_cacheSleeve.Debug)
                     Trace.WriteLine(string.Format("CS Redis: Removed cache item with key {0}", key));
                 return true;
@@ -110,8 +100,7 @@ namespace CacheSleeve
         public void FlushAll()
         {
             var keys = _cacheSleeve.GetAllKeys();
-            foreach (var key in keys)
-                Remove(_cacheSleeve.StripPrefix(key));
+            _cacheSleeve.GetDatebase().KeyDelete(keys.ToArray());
         }
 
         public IEnumerable<Key> GetAllKeys()
@@ -155,7 +144,7 @@ namespace CacheSleeve
             var conn = _cacheSleeve.GetDatebase();
             conn.Publish(key, message);
         }
-                
+
 
         /// <summary>
         /// Shared insert for public wrappers.
@@ -163,28 +152,24 @@ namespace CacheSleeve
         /// <typeparam name="T">The type of the item to insert.</typeparam>
         /// <param name="key">The key of the item to insert.</param>
         /// <param name="value">The value of the item to insert.</param>
-        /// <param name="parentKey">The key of the item that this item is a child of.</param>
-        private bool InternalSet<T>(string key, T value, string parentKey = null)
+        /// <returns></returns>
+        private bool InternalSet<T>(string key, T value)
         {
             var conn = _cacheSleeve.GetDatebase();
             try
             {
                 if (typeof(T) == typeof(byte[]))
                 {
-                    var bytesValue = value as byte[];
-                    if (bytesValue != null)
-                        conn.StringSet(_cacheSleeve.AddPrefix(key), bytesValue);
+                    conn.StringSet(key, value as byte[]);
                 }
                 else if (typeof(T) == typeof(string))
                 {
-                    var stringValue = value as string;
-                    if (stringValue != null)
-                        conn.StringSet(_cacheSleeve.AddPrefix(key), value as string);
+                    conn.StringSet(key, value as string);
                 }
                 else
                 {
-                    var valueString = JsonConvert.SerializeObject(value, this._jsonSettings);
-                    conn.StringSet(_cacheSleeve.AddPrefix(key), valueString);
+                    var serializedValue = _objectSerializer.SerializeObject<T>(value);
+                    conn.StringSet(key, serializedValue);
                 }
                 if (_cacheSleeve.Debug)
                     Trace.WriteLine(string.Format("CS Redis: Set cache item with key {0}", key));
@@ -204,13 +189,12 @@ namespace CacheSleeve
         /// <param name="parentKey">The key of the parent item.</param>
         private void SetDependencies(string childKey, string parentKey)
         {
-            if (string.IsNullOrWhiteSpace(_cacheSleeve.StripPrefix(childKey)) || string.IsNullOrWhiteSpace(_cacheSleeve.StripPrefix(parentKey)))
+            if (childKey.Length <= _cacheSleeve.KeyPrefix.Length || parentKey.Length <= _cacheSleeve.KeyPrefix.Length)
                 return;
 
             var conn = _cacheSleeve.GetDatebase();
             var parentDepKey = parentKey + ".children";
             var childDepKey = childKey + ".parent";
-
             conn.ListRightPush(parentDepKey, childKey);
             conn.StringSet(childDepKey, parentKey);
             var ttl = conn.KeyTimeToLive(parentKey);
@@ -230,7 +214,7 @@ namespace CacheSleeve
         /// <param name="key">The key of the item to remove children for.</param>
         private void RemoveDependencies(string key)
         {
-            if (string.IsNullOrWhiteSpace(_cacheSleeve.StripPrefix(key)))
+            if (key.Length <= _cacheSleeve.KeyPrefix.Length)
                 return;
 
             var conn = _cacheSleeve.GetDatebase();

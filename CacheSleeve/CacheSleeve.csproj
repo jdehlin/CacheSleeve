@@ -67,8 +67,17 @@
     <Compile Include="..\CacheSleeve.NET40\HybridCacher.cs">
       <Link>HybridCacher.cs</Link>
     </Compile>
+    <Compile Include="..\CacheSleeve.NET40\ICacheManager.cs">
+      <Link>ICacheManager.cs</Link>
+    </Compile>
     <Compile Include="..\CacheSleeve.NET40\ICacher.cs">
       <Link>ICacher.cs</Link>
+    </Compile>
+    <Compile Include="..\CacheSleeve.NET40\IObjectSerializer.cs">
+      <Link>IObjectSerializer.cs</Link>
+    </Compile>
+    <Compile Include="..\CacheSleeve.NET40\JsonObjectSerializer.cs">
+      <Link>JsonObjectSerializer.cs</Link>
     </Compile>
     <Compile Include="..\CacheSleeve.NET40\Models\Key.cs">
       <Link>Models\Key.cs</Link>

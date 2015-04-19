@@ -4,8 +4,6 @@ using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Web;
 using CacheSleeve.Models;
 using CacheSleeve.Utilities;
 using RazorEngine;
@@ -14,7 +12,7 @@ using Encoding = System.Text.Encoding;
 
 namespace CacheSleeve
 {
-    public sealed partial class CacheManager
+    public sealed partial class CacheManager : ICacheManager
     {
         private bool _setup;
         private ConnectionMultiplexer _redisConnection;
@@ -41,33 +39,39 @@ namespace CacheSleeve
 
         #endregion
 
+        
         public static void Init(string redisHost, int redisPort = 6379, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.", int timeoutMilli = 5000)
         {
-            PopulateSettings(redisHost, redisPort, redisPassword, redisDb, keyPrefix);
-
             var configuration =
-                ConfigurationOptions.Parse(string.Format("{0}:{1}", Settings.RedisHost, Settings.RedisPort));
+                ConfigurationOptions.Parse(string.Format("{0}:{1}", redisHost, redisPort));
             configuration.AllowAdmin = true;
             configuration.Password = redisPassword;
             configuration.AbortOnConnectFail = false;
             configuration.ConnectTimeout = timeoutMilli; 
-            Settings._redisConnection = ConnectionMultiplexer.Connect(configuration);
+
+            Init(configuration, redisDb, keyPrefix);
+        }
+
+        public static void Init(ConfigurationOptions config, int redisDb = 0, string keyPrefix = "cs.")
+        {
+            PopulateSettings(config, redisDb, keyPrefix);
+
+            Settings._redisConnection = ConnectionMultiplexer.Connect(config);
 
             // Setup pub/sub for cache syncing
             var subscriber = Settings._redisConnection.GetSubscriber();
             subscriber.Subscribe("cacheSleeve.remove.*", (redisChannel, value) => Settings.LocalCacher.Remove(GetString(value)));
             subscriber.Subscribe("cacheSleeve.flush*", (redisChannel, value) => Settings.LocalCacher.FlushAll());
         }
-        
-        private static void PopulateSettings(string redisHost, int redisPort = 6379, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.")
+
+
+        private static void PopulateSettings(ConfigurationOptions config, int redisDb = 0, string keyPrefix = "cs.")
         {
             if (Settings._setup)
                 if (!UnitTestDetector.IsRunningFromXunit) throw new InvalidOperationException("Cannot reinitialize CacheSleeve");
             Settings._setup = true;
 
-            Settings.RedisHost = redisHost;
-            Settings.RedisPort = redisPort;
-            Settings.RedisPassword = redisPassword;
+            Settings.RedisConfiguration = config;
             Settings.KeyPrefix = keyPrefix;
             Settings.RedisDb = redisDb;
 
@@ -107,42 +111,36 @@ namespace CacheSleeve
         /// The local in-memory cache.
         /// </summary>
         public HttpContextCacher LocalCacher { get; private set; }
-        
+
         /// <summary>
         /// The prefix added to keys of items cached by CacheSleeve to prevent collisions.
         /// </summary>
         public string KeyPrefix { get; private set; }
 
         /// <summary>
-        /// The url to the Redis backplane.
+        /// Redis connection configuration.
         /// </summary>
-        public string RedisHost { get; private set; }
-
-        /// <summary>
-        /// The port for the Redis backplane.
-        /// </summary>
-        public int RedisPort { get; private set; }
-
-        /// <summary>
-        /// The password for the Redis backplane.
-        /// </summary>
-        public string RedisPassword { get; private set; }
+        public ConfigurationOptions RedisConfiguration { get; private set; }
 
         /// <summary>
         /// The database to use on the Redis server.
         /// </summary>
         public int RedisDb { get; private set; }
-        
 
         public IDatabase GetDatebase()
         {
             return _redisConnection.GetDatabase(RedisDb);
         }
-        
-        public IEnumerable<RedisKey> GetAllKeys()
+
+        public IEnumerable<RedisKey> GetAllKeys(string pattern = null)
         {
-            var server = _redisConnection.GetServer(string.Format("{0}:{1}", Settings.RedisHost, Settings.RedisPort));
-            var keys = server.Keys(database: Settings.RedisDb, pattern: Settings.AddPrefix("*"));
+            var keys = new List<RedisKey>();
+            foreach (var endpoint in _redisConnection.GetEndPoints())
+            {
+                var server = _redisConnection.GetServer(endpoint);
+                if (!server.IsSlave)
+                    keys.AddRange(server.Keys(database: Settings.RedisDb, pattern: pattern != null ? Settings.AddPrefix(pattern) : Settings.AddPrefix("*")));
+            }
             return keys;
         }
 
@@ -155,20 +153,7 @@ namespace CacheSleeve
         {
             return string.Format("{0}{1}", KeyPrefix, key);
         }
-
-        /// <summary>
-        /// Removes the prefix from the key.
-        /// </summary>
-        /// <param name="key">The internal key with the prefix attached.</param>
-        /// <returns>The key without the prefix.</returns>
-        public string StripPrefix(string key)
-        {
-            if (key == null)
-                return null;
-            var regex = new Regex(string.Format("^{0}", KeyPrefix));
-            return regex.Replace(key, String.Empty);
-        }
-
+        
         /// <summary>
         /// Converts a byte[] to a string.
         /// </summary>

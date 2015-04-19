@@ -82,7 +82,10 @@
     <Compile Include="CacheManager.cs" />
     <Compile Include="HttpContextCacher.cs" />
     <Compile Include="HybridCacher.cs" />
+    <Compile Include="ICacheManager.cs" />
     <Compile Include="ICacher.cs" />
+    <Compile Include="IObjectSerializer.cs" />
+    <Compile Include="JsonObjectSerializer.cs" />
     <Compile Include="Models\Key.cs" />
     <Compile Include="Models\Overview.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

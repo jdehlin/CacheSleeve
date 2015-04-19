@@ -115,14 +115,34 @@ namespace CacheSleeve.Tests
 
         public class Failsafes : RedisCacherTests
         {
+            // This test is removed as functionality is changed. Simple type comparision is not good enough as you may be asking for a base type
+            // or interface. Correct comparisson would be to use IsAssignableFrom but this check adds too much overhead, idea is when you change types
+            // to flush your cache(for in memory cache restarting app will flush it anyway). 
+
+            //[Fact]
+            //public void RemovesAndReturnsDefaultIfGetItemNotOfValidTypeOfT()
+            //{
+            //    _redisCacher.Set("key", TestSettings.George);
+            //    var result = _redisCacher.Get<int>("key");
+            //    Assert.Equal(0, result);
+            //    var result2 = _redisCacher.Get<Monkey>("key");
+            //    Assert.Equal(null, result2);
+            //}
+
             [Fact]
-            public void RemovesAndReturnsDefaultIfGetItemNotOfValidTypeOfT()
+            public void ThrowsExceptionIfGetItemNotOfValidTypeOfT()
             {
                 _redisCacher.Set("key", TestSettings.George);
-                var result = _redisCacher.Get<int>("key");
-                Assert.Equal(0, result);
-                var result2 = _redisCacher.Get<Monkey>("key");
-                Assert.Equal(null, result2);
+                Exception ex = null;
+                try
+                {
+                    _redisCacher.Get<int>("key");
+                }
+                catch (Exception e)
+                {
+                    ex = e;
+                }
+                Assert.NotNull(ex);
             }
         }
 
