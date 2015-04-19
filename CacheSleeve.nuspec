@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>CacheSleeve</id>
-    <version>1.4.7</version>
+    <version>1.4.8</version>
     <title>CacheSleeve</title>
     <authors>Jack Dehlin</authors>
     <owners>Jack Dehlin</owners>
@@ -16,7 +16,7 @@
 	    
     </summary>
     <releaseNotes>
-      Added a NET40 build.
+      Allow for setting connection timeout when initializing.
     </releaseNotes>
     <copyright>Copyright Jack Dehlin 2015</copyright>
     <tags>Redis Cache Caching Distributed</tags>

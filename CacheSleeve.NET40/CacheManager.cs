@@ -41,7 +41,7 @@ namespace CacheSleeve
 
         #endregion
 
-        public static void Init(string redisHost, int redisPort = 6379, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.")
+        public static void Init(string redisHost, int redisPort = 6379, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.", int timeoutMilli = 5000)
         {
             PopulateSettings(redisHost, redisPort, redisPassword, redisDb, keyPrefix);
 
@@ -50,6 +50,7 @@ namespace CacheSleeve
             configuration.AllowAdmin = true;
             configuration.Password = redisPassword;
             configuration.AbortOnConnectFail = false;
+            configuration.ConnectTimeout = timeoutMilli; 
             Settings._redisConnection = ConnectionMultiplexer.Connect(configuration);
 
             // Setup pub/sub for cache syncing
@@ -131,6 +132,7 @@ namespace CacheSleeve
         /// The database to use on the Redis server.
         /// </summary>
         public int RedisDb { get; private set; }
+        
 
         public IDatabase GetDatebase()
         {

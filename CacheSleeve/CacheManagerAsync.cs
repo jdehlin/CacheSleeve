@@ -5,7 +5,7 @@ namespace CacheSleeve
 {
     public sealed partial class CacheManager
     {
-        public async static Task InitAsync(string redisHost, int redisPort = 6379, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.")
+        public async static Task InitAsync(string redisHost, int redisPort = 6379, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.", int timeoutMilli = 5000)
         {
             PopulateSettings(redisHost, redisPort, redisPassword, redisDb, keyPrefix);
 
@@ -14,6 +14,7 @@ namespace CacheSleeve
             configuration.AllowAdmin = true;
             configuration.Password = redisPassword;
             configuration.AbortOnConnectFail = false;
+            configuration.ConnectTimeout = timeoutMilli; 
             Settings._redisConnection = await ConnectionMultiplexer.ConnectAsync(configuration);
 
             // Setup pub/sub for cache syncing
