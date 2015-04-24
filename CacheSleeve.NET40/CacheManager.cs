@@ -39,7 +39,19 @@ namespace CacheSleeve
 
         #endregion
 
-        
+
+        public static void InitMulti(string hosts, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.", int timeoutMilli = 5000)
+        {
+            var configuration =
+                ConfigurationOptions.Parse(hosts);
+            configuration.AllowAdmin = true;
+            configuration.Password = redisPassword;
+            configuration.AbortOnConnectFail = false;
+            configuration.ConnectTimeout = timeoutMilli;
+
+            Init(configuration, redisDb, keyPrefix);
+        }
+
         public static void Init(string redisHost, int redisPort = 6379, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.", int timeoutMilli = 5000)
         {
             var configuration =
@@ -138,7 +150,7 @@ namespace CacheSleeve
             foreach (var endpoint in _redisConnection.GetEndPoints())
             {
                 var server = _redisConnection.GetServer(endpoint);
-                if (!server.IsSlave)
+                if (!server.IsSlave && server.IsConnected)
                     keys.AddRange(server.Keys(database: Settings.RedisDb, pattern: pattern != null ? Settings.AddPrefix(pattern) : Settings.AddPrefix("*")));
             }
             return keys;

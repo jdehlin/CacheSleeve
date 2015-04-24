@@ -5,7 +5,19 @@ namespace CacheSleeve
 {
     public sealed partial class CacheManager
     {
-        public static Task InitAsync(string redisHost, int redisPort = 6379, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.", int timeoutMilli = 5000)
+        public async static void InitMultiAsync(string hosts, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.", int timeoutMilli = 5000)
+        {
+            var configuration =
+                ConfigurationOptions.Parse(hosts);
+            configuration.AllowAdmin = true;
+            configuration.Password = redisPassword;
+            configuration.AbortOnConnectFail = false;
+            configuration.ConnectTimeout = timeoutMilli;
+
+            await InitAsync(configuration, redisDb, keyPrefix);
+        }
+
+        public async static Task InitAsync(string redisHost, int redisPort = 6379, string redisPassword = null, int redisDb = 0, string keyPrefix = "cs.", int timeoutMilli = 5000)
         {
             var configuration =
                 ConfigurationOptions.Parse(string.Format("{0}:{1}", redisHost, redisPort));
@@ -14,7 +26,7 @@ namespace CacheSleeve
             configuration.AbortOnConnectFail = false;
             configuration.ConnectTimeout = timeoutMilli; 
 
-            return InitAsync(configuration, redisDb, keyPrefix);
+            await InitAsync(configuration, redisDb, keyPrefix);
         }
 
         public async static Task InitAsync(ConfigurationOptions config, int redisDb = 0, string keyPrefix = "cs.")
