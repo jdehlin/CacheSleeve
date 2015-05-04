@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using System.Linq;
 using CacheSleeve.Models;
-using CacheSleeve.Utilities;
 using RazorEngine;
 using StackExchange.Redis;
 using Encoding = System.Text.Encoding;
@@ -14,7 +11,6 @@ namespace CacheSleeve
 {
     public sealed partial class CacheManager : ICacheManager
     {
-        private bool _setup;
         private ConnectionMultiplexer _redisConnection;
 
         #region Singleton Setup
@@ -79,10 +75,6 @@ namespace CacheSleeve
 
         private static void PopulateSettings(ConfigurationOptions config, int redisDb = 0, string keyPrefix = "cs.")
         {
-            if (Settings._setup)
-                if (!UnitTestDetector.IsRunningFromXunit) throw new InvalidOperationException("Cannot reinitialize CacheSleeve");
-            Settings._setup = true;
-
             Settings.RedisConfiguration = config;
             Settings.KeyPrefix = keyPrefix;
             Settings.RedisDb = redisDb;
