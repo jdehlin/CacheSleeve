@@ -15,7 +15,7 @@ namespace CacheSleeve
 
         public HttpContextCacher()
         {
-            _cache = System.Web.HttpContext.Current.Cache;
+            _cache = System.Web.HttpRuntime.Cache;
             _cacheSleeve = CacheManager.Settings;
             _cacheSleeve.Debug = true;
         }
