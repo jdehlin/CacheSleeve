@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>CacheSleeve</id>
-    <version>1.4.17</version>
+    <version>1.4.19</version>
     <title>CacheSleeve</title>
     <authors>Jack Dehlin</authors>
     <owners>Jack Dehlin</owners>
@@ -17,6 +17,7 @@
     </summary>
     <releaseNotes>
       Added ability to connect to multiple servers
+      Switched to HttpRuntime.Cache
     </releaseNotes>
     <copyright>Copyright Jack Dehlin 2015</copyright>
     <tags>Redis Cache Caching Distributed</tags>
