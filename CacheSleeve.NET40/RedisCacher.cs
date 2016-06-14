@@ -17,8 +17,6 @@ namespace CacheSleeve
         public RedisCacher()
         {
             _cacheSleeve = CacheManager.Settings;
-            _cacheSleeve.Debug = true;
-
             _objectSerializer = new JsonObjectSerializer();
         }
 
