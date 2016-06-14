@@ -17,7 +17,6 @@ namespace CacheSleeve
         {
             _cache = System.Web.HttpRuntime.Cache;
             _cacheSleeve = CacheManager.Settings;
-            _cacheSleeve.Debug = true;
         }
 
 
