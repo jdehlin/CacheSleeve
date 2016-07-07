@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>CacheSleeve.StrongName</id>
+    <version>0.1.1</version>
+    <title>CacheSleeve.StrongName</title>
+    <authors>Jack Dehlin</authors>
+    <owners>Jack Dehlin</owners>
+    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
+    <projectUrl>https://github.com/jdehlin/CacheSleeve/</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>
+      CacheSleeve lets you easily set up distributed in-memory cache with a Redis backplane for .NET projects.
+    </description>
+    <summary>
+	    
+    </summary>
+    <releaseNotes>
+      Added ability to connect to multiple servers
+      Switched to HttpRuntime.Cache
+    </releaseNotes>
+    <copyright>Copyright Jack Dehlin 2015</copyright>
+    <tags>Redis Cache Caching Distributed</tags>
+    <dependencies>
+      <dependency id="StackExchange.Redis.StrongName" version="1.0.488" />
+      <dependency id="Newtonsoft.Json" version="5.0.8" />
+      <dependency id="RazorEngine" version="3.6.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="CacheSleeve\bin\Release\CacheSleeve.dll" target="lib\net45" />
+    <file src="CacheSleeve\bin\Release\CacheSleeve.pdb" target="lib\net45" />
+  </files>
+</package>
