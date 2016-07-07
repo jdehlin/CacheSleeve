@@ -1,5 +1,10 @@
 ﻿using System.Collections.Generic;
 using CacheSleeve.Tests.TestObjects;
+using Xunit;
+using System.Diagnostics;
+
+
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace CacheSleeve.Tests
 {
@@ -13,5 +18,22 @@ namespace CacheSleeve.Tests
 
         // don't mess with George.. you'll break a lot of tests
         public static Monkey George = new Monkey("George") { Bananas = new List<Banana> { new Banana(4, "yellow") }};
+
+        static TestSettings()
+        {
+            StartRedis();
+        }
+
+        public static bool _redisStarted = false;
+
+        public static void StartRedis()
+        {            
+            if (!_redisStarted)
+            {
+                Process.Start(@"..\..\..\packages\redis-64.3.0.503\tools\redis-server.exe");
+                _redisStarted = true;
+            }
+        }
+
     }
 }
