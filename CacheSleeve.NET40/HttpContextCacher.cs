@@ -108,7 +108,7 @@ namespace CacheSleeve
                 if (entry.ExpiresAt == null)
                     _cache.Insert(_cacheSleeve.AddPrefix(key), entry, cacheDependency);
                 else
-                    _cache.Insert(_cacheSleeve.AddPrefix(key), entry, cacheDependency, entry.ExpiresAt.Value, Cache.NoSlidingExpiration);
+                    _cache.Insert(_cacheSleeve.AddPrefix(key), entry, cacheDependency, entry.ExpiresAt.Value.ToUniversalTime(), Cache.NoSlidingExpiration);
                 if (_cacheSleeve.Debug)
                     Trace.WriteLine(string.Format("CS HttpContext: Set cache item with key {0}", key));
                 return true;
